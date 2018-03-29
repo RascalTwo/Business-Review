@@ -1,0 +1,24 @@
+{
+  "name": "business-review",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "express": "^4.16.3",
+    "morgan": "^1.9.0",
+    "npm-run-all": "^4.1.2",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-scripts": "1.1.1"
+  },
+  "proxy": "http://localhost:8080",
+  "scripts": {
+    "dev": "npm-run-all --parallel dev-server dev-react",
+    "dev-server": "nodemon --watch server --watch server.js server.js",
+    "dev-react": "react-scripts start",
+    "start": "npm-run-all build-react start-server",
+    "start-server": "node server.js",
+    "build-react": "react-scripts build",
+    "test-react": "react-scripts test --env=jsdom",
+    "eject-react": "react-scripts eject"
+  }
+}
