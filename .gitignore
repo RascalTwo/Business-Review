@@ -25,5 +25,3 @@ shrinkwrap.yaml
 **/*.lock
 
 **/*.swp
-
-.eslintrc.json

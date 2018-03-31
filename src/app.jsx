@@ -6,8 +6,8 @@ class App extends Component {
   /**
    * Create an instance of the App.
    */
-  constructor() {
-    super();
+  constructor(props, context) {
+    super(props, context);
 
     this.state = {
       apiTime: null

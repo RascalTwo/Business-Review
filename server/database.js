@@ -2,7 +2,7 @@ module.exports = class Database {
   /**
    * Create a instance of the database manager.
    *
-   * @param {Server} server Server instance.
+   * @param {any} server Server instance.
    */
   constructor(server) {
     this.root = server.root;
@@ -14,6 +14,8 @@ module.exports = class Database {
    * Initalize the database connection.
    */
   init() {
-    return Promise.resolve().then(() => (this.db = {}));
+    return Promise.resolve().then(() => {
+      this.db = {};
+    });
   }
 };
