@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- SQL XML created by WWW SQL Designer, https://github.com/ondras/wwwsqldesigner/ -->
+<!-- Active URL: http://ondras.zarovi.cz/sql/demo/ -->
+<sql>
+<datatypes db="sqlite">
+	<group label="Affinity">
+		<type label="Text" default="" length="1" sql="TEXT" quote="'" color="rgb(255,200,200)"/>
+		<type label="Numeric" default="0" length="0" sql="NUMERIC" quote="" color="rgb(238,238,170)"/>
+		<type label="Integer" default="0" length="0" sql="INTEGER" quote="" color="rgb(238,238,170)"/>
+		<type label="Real" default="0" length="0" sql="REAL" quote="" color="rgb(238,238,170)"/>
+		<type label="None" default="" length="0" sql="NONE" quote="" color="rgb(200,255,200)"/>
+	</group>
+</datatypes><table x="300" y="100" name="business">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="name" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="address" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="city" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="state" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="postal_code" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="purchased" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="500" y="200" name="review">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="business_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="business" row="id" />
+</row>
+<row name="user_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="user" row="id" />
+</row>
+<row name="score" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="date" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<row name="text" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="300" y="300" name="user">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="username" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<row name="password_hash" null="0" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+<table x="100" y="100" name="photo">
+<row name="id" null="0" autoincrement="1">
+<datatype>INTEGER</datatype>
+</row>
+<row name="business_id" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+<relation table="business" row="id" />
+</row>
+<row name="caption" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+</table>
+</sql>
+
