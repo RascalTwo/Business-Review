@@ -17,6 +17,9 @@
 <row name="name" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
+<row name="type" null="1" autoincrement="0">
+<datatype>TEXT</datatype>
+</row>
 <row name="address" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>

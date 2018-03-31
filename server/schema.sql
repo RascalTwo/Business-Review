@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS 'business' (
 'id' INTEGER NOT NULL  PRIMARY KEY AUTOINCREMENT,
 'name' TEXT NOT NULL ,
+'type' TEXT ,
 'address' TEXT NOT NULL ,
 'city' TEXT NOT NULL ,
 'state' TEXT NOT NULL ,
@@ -29,4 +30,4 @@ CREATE TABLE IF NOT EXISTS 'photo' (
 'caption' INTEGER NOT NULL 
 );
 
-PRAGMA user_version = 1;
+PRAGMA user_version = 2;
