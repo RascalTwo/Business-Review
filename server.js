@@ -1,7 +1,9 @@
+const fs = require('fs');
 const path = require('path');
 
 const express = require('express');
 const morgan = require('morgan');
+const CircularJSON = require('circular-json');
 
 const routes = require('./server/routes.js');
 const Database = require('./server/database.js');
@@ -41,6 +43,11 @@ class Server {
     this.db = new Database(this);
 
     return this.db.init().then(() => {
+      if (process.env.NODE_ENV === 'production') return Promise.resolve();
+      return this.db.getPayload().then((payload) => {
+        fs.writeFileSync(path.resolve(__dirname, 'src', 'hot_data.json'), CircularJSON.stringify(payload, null, '  '));
+      });
+    }).then(() => {
       routes(this);
 
       // Serve all requests to '/static/*' from the './build/static/' folder.

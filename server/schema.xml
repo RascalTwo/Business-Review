@@ -64,7 +64,7 @@
 <part>id</part>
 </key>
 </table>
-<table x="300" y="300" name="user">
+<table x="300" y="340" name="user">
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
@@ -86,8 +86,11 @@
 <datatype>INTEGER</datatype>
 <relation table="business" row="id" />
 </row>
-<row name="caption" null="0" autoincrement="0">
+<row name="position" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
+</row>
+<row name="caption" null="1" autoincrement="0">
+<datatype>TEXT</datatype>
 </row>
 <key type="PRIMARY" name="">
 <part>id</part>

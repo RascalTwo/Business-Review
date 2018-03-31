@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS 'user' (
 CREATE TABLE IF NOT EXISTS 'photo' (
 'id' INTEGER NOT NULL  PRIMARY KEY AUTOINCREMENT,
 'business_id' INTEGER NOT NULL  REFERENCES 'business' ('id'),
-'caption' INTEGER NOT NULL 
+'position' INTEGER NOT NULL ,
+'caption' TEXT
 );
 
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
