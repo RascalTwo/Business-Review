@@ -1,3 +1,5 @@
+const sqlite = require('sqlite');
+
 module.exports = class Database {
   /**
    * Create a instance of the database manager.
@@ -14,8 +16,10 @@ module.exports = class Database {
    * Initalize the database connection.
    */
   init() {
-    return Promise.resolve().then(() => {
-      this.db = {};
-    });
+    return sqlite
+      .open(`${this.root}/data/database.db`, { Promise })
+      .then((db) => {
+        this.db = db;
+      });
   }
 };
