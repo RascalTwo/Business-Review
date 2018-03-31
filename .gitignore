@@ -22,4 +22,6 @@ yarn-error.log*
 pnpm-debug.log*
 
 shrinkwrap.yaml
-*.lock
+**/*.lock
+
+**/*.swp
