@@ -8,7 +8,7 @@ module.exports = class Database {
    * @param {any} server Server instance.
    */
   constructor(server) {
-    this.root = server.root;
+    this.server = server;
 
     this.db = null;
   }
@@ -18,9 +18,9 @@ module.exports = class Database {
    */
   init() {
     return sqlite
-      .open(`${this.root}/data/database.db`, { Promise })
+      .open(`${this.server.paths.data}/database.db`, { Promise })
       .then((db) => {
-        const schema = fs.readFileSync(`${this.root}/server/schema.sql`).toString();
+        const schema = fs.readFileSync(`${this.server.paths.root}/server/schema.sql`).toString();
         return db.exec(schema);
       })
       .then((db) => {

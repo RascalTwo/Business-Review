@@ -13,10 +13,16 @@ class Server {
    * Create a instance of the Server.
    *
    * @param {Number} [port=undefined] Port to run on.
+   * @param {Object} [paths={}] Paths for the server.
    */
-  constructor(port) {
+  constructor(port, paths = {}) {
     this.port = port || process.env.PORT || 8080;
     this.root = __dirname;
+    this.paths = Object.assign({
+      data: `${__dirname}/data`
+    }, paths, {
+      root: __dirname
+    });
 
     this.app = null;
     this.db = null;
@@ -64,6 +70,11 @@ class Server {
    */
   start() {
     return new Promise((resolve, reject) => {
+      if (this.app === null) {
+        reject(new Error('Must initalize server before starting'));
+        return;
+      }
+
       this.httpServer = this.app.listen(this.port, () => {
         console.log(`Listening on port ${this.port}`);
         return resolve(this);

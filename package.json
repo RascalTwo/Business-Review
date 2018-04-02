@@ -1,6 +1,6 @@
 {
   "name": "business-review",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "dependencies": {
     "circular-json": "^0.5.1",
@@ -15,14 +15,18 @@
   },
   "proxy": "http://localhost:8080",
   "scripts": {
-    "eslint": "eslint --ext .js --ext .jsx server.js server src",
+    "pre-commit": "CI=true npm-run-all eslint test",
+    "eslint": "eslint --ext .js --ext .jsx server.js server src tests",
+    "test": "npm-run-all test-server test-react",
+    "test-react": "react-scripts test --env=jsdom",
+    "test-server": "jest --notify --runInBand ./tests",
+    "test-server-test": "jest --notify --runInBand",
     "dev": "npm-run-all --parallel dev-server dev-react",
     "dev-server": "nodemon --watch server --watch server.js server.js",
     "dev-react": "react-scripts start",
     "start": "npm-run-all build-react start-server",
     "start-server": "node server.js",
     "build-react": "react-scripts build",
-    "test-react": "react-scripts test --env=jsdom",
     "eject-react": "react-scripts eject"
   },
   "devDependencies": {
@@ -30,6 +34,7 @@
     "eslint-config-airbnb": "^16.1.0",
     "eslint-plugin-import": "^2.9.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
-    "eslint-plugin-react": "^7.7.0"
+    "eslint-plugin-react": "^7.7.0",
+    "node-fetch": "^2.1.2"
   }
 }

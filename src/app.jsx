@@ -4,21 +4,6 @@ import CircularJSON from 'circular-json';
 import logo from './logo.svg';
 import './app.css';
 
-/**
- * Map expected and generated filepaths for files in context.
- *
- * @returns {Object} Mapped filepaths.
- */
-function mapFiles(context) {
-  return context.keys().reduce((images, filepath) => {
-    Object.assign(images, {
-      [filepath.replace('./', '')]: context(filepath)
-    });
-    return images;
-  }, {});
-}
-
-const images = mapFiles(require.context('./business_photos', false, /\.(png|jpe?g|svg)$/));
 
 class App extends Component {
   /**
@@ -28,7 +13,8 @@ class App extends Component {
     super(props, context);
 
     this.state = {
-      apiTime: null
+      apiTime: null,
+      apiSuccess: null
     };
   }
 
@@ -45,11 +31,12 @@ class App extends Component {
   updateTime() {
     return fetch('/api')
       .then(r => r.json())
-      .then((response) => {
-        this.setState({
-          apiTime: response.timestamp
-        });
-      });
+      .then(response => this.setState({
+        apiTime: response.timestamp,
+        apiSuccess: true
+      })).catch(() => this.setState({
+        apiSuccess: false
+      }));
   }
 
   /**
@@ -57,12 +44,12 @@ class App extends Component {
    */
   render() {
     const photos = this.props.payload[0] ? this.props.payload[0].photos
-      .map(photo => <img key={photo.id} src={images[`${photo.id}.jpg`]} alt={photo.caption} title={photo.caption}/>) : false;
+      .map(photo => <img key={photo.id} src={this.props.photoMap[`${photo.id}.jpg`]} alt={photo.caption} title={photo.caption} />) : false;
 
     return (
       <div id="app">
         <img src={logo} id="logo" alt="logo" />
-        <div>{new Date(this.state.apiTime).toString()}</div>
+        <div style={{ backgroundColor: (this.state.apiSuccess ? 'green' : 'red'), color: 'white' }}>{new Date(this.state.apiTime).toString()}</div>
         <button onClick={() => this.updateTime()}>Update Time</button>
         <p>Payload:</p>
         <pre style={{ textAlign: 'left' }}>{CircularJSON.stringify(this.props.payload, null, '  ')}</pre>
@@ -114,7 +101,8 @@ const businessShape = PropTypes.shape({
 });
 
 App.propTypes = {
-  payload: PropTypes.arrayOf(businessShape).isRequired
+  payload: PropTypes.arrayOf(businessShape).isRequired,
+  photoMap: PropTypes.objectOf(String).isRequired
 };
 
 export default App;
