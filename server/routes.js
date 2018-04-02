@@ -9,9 +9,9 @@ module.exports = (Server) => {
   }));
 
   Server.app.get('/', (_, response) => Server.db.getPayload().then((payload) => {
-    const html = fs.readFileSync(path.join(Server.root, 'build', 'index.html')).toString();
+    const html = fs.readFileSync(path.join(Server.paths.root, 'build', 'index.html')).toString();
     response.send(html.replace(
-      'payload=null',
+      'payload=false',
       `payload=${CircularJSON.stringify(payload)}`
     ));
   }).catch((error) => {

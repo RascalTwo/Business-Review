@@ -2,23 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import CircularJSON from 'circular-json';
 import Header from './Header';
+import Footer from './Footer';
 import './app.css';
-
-/**
- * Map expected and generated filepaths for files in context.
- *
- * @returns {Object} Mapped filepaths.
- */
-function mapFiles(context) {
-  return context.keys().reduce((images, filepath) => {
-    Object.assign(images, {
-      [filepath.replace('./', '')]: context(filepath)
-    });
-    return images;
-  }, {});
-}
-
-const images = mapFiles(require.context('./business_photos', false, /\.(png|jpe?g|svg)$/));
 
 class App extends Component {
   /**
@@ -28,7 +13,8 @@ class App extends Component {
     super(props, context);
 
     this.state = {
-      apiTime: null
+      apiTime: null,
+      apiSuccess: null
     };
   }
 
@@ -45,11 +31,15 @@ class App extends Component {
   updateTime() {
     return fetch('/api')
       .then(r => r.json())
-      .then((response) => {
+      .then(response =>
         this.setState({
-          apiTime: response.timestamp
-        });
-      });
+          apiTime: response.timestamp,
+          apiSuccess: true
+        }))
+      .catch(() =>
+        this.setState({
+          apiSuccess: false
+        }));
   }
 
   /**
@@ -60,7 +50,7 @@ class App extends Component {
       ? this.props.payload[0].photos.map(photo => (
         <img
           key={photo.id}
-          src={images[`${photo.id}.jpg`]}
+          src={this.props.photoMap[`${photo.id}.jpg`]}
           alt={photo.caption}
           title={photo.caption}
         />
@@ -70,16 +60,38 @@ class App extends Component {
     return (
       <div id="app">
         <Header />
-        <div>
-          <div>{new Date(this.state.apiTime).toString()}</div>
-          <button onClick={() => this.updateTime()}>Update Time</button>
-          <p>Payload:</p>
-          <pre style={{ textAlign: 'left' }}>
-            {CircularJSON.stringify(this.props.payload, null, '  ')}
-          </pre>
-          <p>Photos</p>
-          {photos}
+        <div className="container">
+          <div className="home-content">
+            <div className="intro">
+              <div style={{ backgroundColor: (this.state.apiSuccess ? 'green' : 'red'), color: 'white' }}>{new Date(this.state.apiTime).toString()}</div>
+              <button onClick={() => this.updateTime()}>Update Time</button>
+              {/* <pre style={{ textAlign: 'left' }}>{CircularJSON.stringify(this.props.payload, null, '  ')}</pre>
+              {photos} */}
+              <p>
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Cumque perspiciatis impedit delectus aspernatur sint distinctio.
+              </p>
+            </div>
+            <div className="browse-reviews">
+              <h2>Reviews</h2>
+              <p>
+                Eaque excepturi, cum laborum eveniet doloribus ducimus sed, adipisci id accusantium, earum vel impedit.
+                Lorem ipsum dolor, sit amet consectetur adipisicing elit.
+                Ipsum ex velit officia aspernatur consequuntur? Doloremque, laudantium.
+              </p>
+              <a href="#reviews" className="browse-button">Browse Reviews</a>
+            </div>
+            <div className="browse-places">
+              <h2>Places</h2>
+              <p>
+                Eaque excepturi, cum laborum eveniet doloribus ducimus sed, adipisci id accusantium, earum vel impedit.
+                Lorem ipsum dolor, sit amet consectetur adipisicing elit.
+                Ipsum ex velit officia aspernatur consequuntur? Doloremque, laudantium.
+              </p>
+              <a href="#businesses" className="browse-button">Browse Places</a>
+            </div>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -126,7 +138,8 @@ const businessShape = PropTypes.shape({
 });
 
 App.propTypes = {
-  payload: PropTypes.arrayOf(businessShape).isRequired
+  payload: PropTypes.arrayOf(businessShape).isRequired,
+  photoMap: PropTypes.objectOf(String).isRequired
 };
 
 export default App;
