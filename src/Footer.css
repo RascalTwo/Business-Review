@@ -1,0 +1,36 @@
+footer {
+  margin: 3em 0 0;
+  background: #31393c;
+  height: 1fr;
+  color: #fdfffc;
+  padding-top: 3rem;
+  white-space: nowrap;
+}
+
+footer h5 {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0.5em 0;
+}
+
+.footer-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 128px;
+  flex-wrap: wrap;
+  width: 232px;
+  line-height: 30px;
+}
+
+.footer-link {
+  text-decoration: none;
+  color: #fdfffc;
+  font-size: 0.85em;
+}
+
+footer .container {
+  margin-bottom: 5em;
+}
