@@ -1,17 +1,72 @@
 #app {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
 }
 
-#logo {
-  animation: logo-spin infinite 5s linear;
-  height: 12.5vh;
+.home-content {
+  display: grid;
+  grid-template-areas:
+    "intro intro"
+    "reviews places";
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 200px auto;
+  grid-gap: 4em;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+@media only screen and (max-width: 840px) {
+  .home-content {
+    grid-template-areas:
+      "intro"
+      "reviews"
+      "places";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    text-align: center;
   }
-  to {
-    transform: rotate(360deg);
+}
+
+@media only screen and (max-width: 640px) {
+  .browse-button {
+    width: 100%;
   }
+}
+
+.intro {
+  grid-area: intro;
+}
+
+.browse-reviews {
+  grid-area: reviews;
+}
+
+.browse-places {
+  grid-area: places;
+}
+
+.browse-button {
+  display: inline-block;
+  text-transform: uppercase;
+  font-weight: 700;
+  height: 42px;
+  line-height: 42px;
+  padding: 0 1em;
+  background: #f6aa1c;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 3px;
+  box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease;
+  letter-spacing: 0.1em;
+  margin: 1em 0;
+}
+
+.browse-button:hover {
+  background: #fcba41;  
+  transform: translateY(-1px);
+  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.browse-button:active {
+  background: #eea41b;  
+  transform: translateY(+1px);
 }
