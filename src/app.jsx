@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import CircularJSON from 'circular-json';
-import logo from './logo.svg';
+import Header from './Header';
 import './app.css';
 
 /**
@@ -56,18 +56,30 @@ class App extends Component {
    * Render the component.
    */
   render() {
-    const photos = this.props.payload[0] ? this.props.payload[0].photos
-      .map(photo => <img key={photo.id} src={images[`${photo.id}.jpg`]} alt={photo.caption} title={photo.caption}/>) : false;
+    const photos = this.props.payload[0]
+      ? this.props.payload[0].photos.map(photo => (
+        <img
+          key={photo.id}
+          src={images[`${photo.id}.jpg`]}
+          alt={photo.caption}
+          title={photo.caption}
+        />
+      ))
+      : false;
 
     return (
       <div id="app">
-        <img src={logo} id="logo" alt="logo" />
-        <div>{new Date(this.state.apiTime).toString()}</div>
-        <button onClick={() => this.updateTime()}>Update Time</button>
-        <p>Payload:</p>
-        <pre style={{ textAlign: 'left' }}>{CircularJSON.stringify(this.props.payload, null, '  ')}</pre>
-        <p>Photos</p>
-        {photos}
+        <Header />
+        <div>
+          <div>{new Date(this.state.apiTime).toString()}</div>
+          <button onClick={() => this.updateTime()}>Update Time</button>
+          <p>Payload:</p>
+          <pre style={{ textAlign: 'left' }}>
+            {CircularJSON.stringify(this.props.payload, null, '  ')}
+          </pre>
+          <p>Photos</p>
+          {photos}
+        </div>
       </div>
     );
   }
@@ -97,7 +109,7 @@ const reviewShape = PropTypes.shape({
   date: PropTypes.number,
   text: PropTypes.string,
   business: () => businessShape, // eslint-disable-line
-  user: userShape,
+  user: userShape
 });
 
 const businessShape = PropTypes.shape({
