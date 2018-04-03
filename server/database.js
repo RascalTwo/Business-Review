@@ -1,6 +1,13 @@
 const fs = require('fs');
 const sqlite = require('sqlite');
 
+/**
+ * @typedef {Object} API_Response Response from an API endpoint.
+ * @prop {Boolean} success If the request was successful.
+ * @prop {Array<String>} message A message and the level of the message.
+ * @prop {any} data Data to pass to the client.
+ */
+
 module.exports = class Database {
   /**
    * Create a instance of the database manager.
@@ -60,15 +67,15 @@ module.exports = class Database {
 
     reviews.forEach((review) => {
       Object.assign(review, {
-        business: businessMap[review.business_id]
+        business: businessMap[review.businessId]
       });
-      businessMap[review.business_id].reviews.push(review);
+      businessMap[review.businessId].reviews.push(review);
 
-      if (userMap[review.user_id]) {
+      if (userMap[review.userId]) {
         Object.assign(review, {
-          user: userMap[review.user_id]
+          user: userMap[review.userId]
         });
-        userMap[review.user_id].reviews.push(review);
+        userMap[review.userId].reviews.push(review);
         return;
       }
       Object.assign(review, {
@@ -101,9 +108,9 @@ module.exports = class Database {
 
     return photos.map((photo) => {
       Object.assign(photo, {
-        business: businessMap[photo.business_id]
+        business: businessMap[photo.businessId]
       });
-      businessMap[photo.business_id].photos.push(photo);
+      businessMap[photo.businessId].photos.push(photo);
 
       return photo;
     });
@@ -117,6 +124,100 @@ module.exports = class Database {
     const businesses = await this.db.all('SELECT * FROM business;');
     await this.appendReviews(businesses);
     await this.appendPhotos(businesses);
-    return businesses;
+    return businesses.map((business) => {
+      if (business.purchased === null) {
+        Object.assign(business, {
+          purchased: false
+        });
+      }
+      return business;
+    });
+  }
+
+
+  /**
+   * Attempt to add a business to the database.
+   *
+   * @param {String} name
+   * @param {String} [type=undefined]
+   * @param {String} address Street address
+   * @param {String} city
+   * @param {String} state Either full or two-character state code.
+   * @param {String} postalCode
+   *
+   * @returns {Promise<API_Response>}
+   */
+  addBusiness(name, type, address, city, state, postalCode) {
+    return this.db.get(
+      'SELECT * FROM business WHERE name = ? AND address = ? AND city = ? AND state = ? AND postalCode = ?;',
+      name, address, city, state, postalCode
+    ).then((found) => {
+      if (found) {
+        return {
+          success: false,
+          message: ['Business with that information already exists', 'warn'],
+          data: Object.assign(found, {
+            purchased: found.purchased !== null
+          })
+        };
+      }
+
+      return this.db.run(
+        'INSERT INTO business (name, type, address, city, state, postalCode) VALUES (?, ?, ?, ?, ?, ?);',
+        name, type, address, city, state, postalCode
+      ).then(result => ({
+        success: true,
+        message: ['Business successfully added', 'success'],
+        data: {
+          id: result.lastID,
+          name,
+          type,
+          address,
+          city,
+          state,
+          postalCode,
+          purchased: false
+        }
+      }));
+    });
+  }
+
+
+  /**
+   * Attempt to add a review to a business.
+   *
+   * @param {Number} businessId ID of businessing to review.
+   * @param {Number} userId ID of the user making the review.
+   * @param {Number} score Score of the review.
+   * @param {String} text Text content of the review.
+   *
+   * @returns {Promise<API_Response>}
+   */
+  addReview(businessId, userId, score, text) {
+    const now = Date.now();
+    return this.db.get('SELECT * FROM business WHERE id = ?', businessId).then((found) => {
+      if (!found) {
+        return {
+          success: false,
+          message: ['Business not found', 'error']
+        };
+      }
+
+      return this.db.run(
+        'INSERT INTO review (businessId, userId, score, date, text) VALUES (?, ?, ?, ?, ?);',
+        businessId, userId, score, now, text
+      ).then(result => ({
+        success: true,
+        message: ['Review successfully added', 'success'],
+        data: {
+          id: result.lastID,
+          businessId,
+          userId,
+          score,
+          date: now,
+          text
+        }
+      }));
+    });
   }
 };

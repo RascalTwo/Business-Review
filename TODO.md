@@ -22,7 +22,22 @@ Add coverage reports to client-side tests.
 
 *****
 
-Define API routes.
+Prevent identical and nearly-identical business and review submissions.
+
+*****
+
+Implement user authentication.
+
+*****
+
+Finish creating API routes:
+
+- Editing
+	- Business
+	- Review
+- Deletion:
+	- Business
+	- Review
 
 *****
 

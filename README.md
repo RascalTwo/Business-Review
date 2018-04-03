@@ -55,3 +55,17 @@ Testing is done in two parts, one set of tests test the server, while another se
 The server-side tests are located in `./tests/`, while the client-side tests are located in `./src/` and are suffixed with `.test.js`.
 
 The server-side tests output coverage reports to `./coverage/`, you can open the `index.html` file in this directory to view the lines directly.
+
+## Mock Data
+
+The directory `./mock_data/` contains a `.sql` recipe and a script to execute said recipe.
+
+Simply execute it with the path of the database to populate as an argument, like so:
+
+`node mock-data.js ./mockdata.db`
+
+This database must be already created with all tables, yet must have no data within it.
+
+For example, to populate the current database with the mock data, this command would do:
+
+`node mock_data/mock-data.js ./data/database.db`.

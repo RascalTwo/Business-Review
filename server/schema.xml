@@ -29,7 +29,7 @@
 <row name="state" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
-<row name="postal_code" null="0" autoincrement="0">
+<row name="postalCode" null="0" autoincrement="0">
 <datatype>TEXT</datatype>
 </row>
 <row name="purchased" null="1" autoincrement="0">
@@ -43,11 +43,11 @@
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
-<row name="business_id" null="0" autoincrement="0">
+<row name="businessId" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="business" row="id" />
 </row>
-<row name="user_id" null="0" autoincrement="0">
+<row name="userId" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="user" row="id" />
 </row>
@@ -82,7 +82,7 @@
 <row name="id" null="0" autoincrement="1">
 <datatype>INTEGER</datatype>
 </row>
-<row name="business_id" null="0" autoincrement="0">
+<row name="businessId" null="0" autoincrement="0">
 <datatype>INTEGER</datatype>
 <relation table="business" row="id" />
 </row>
