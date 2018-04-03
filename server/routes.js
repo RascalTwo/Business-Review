@@ -11,7 +11,7 @@ module.exports = (Server) => {
   Server.app.get('/', (_, response) => Server.db.getPayload().then((payload) => {
     const html = fs.readFileSync(path.join(Server.paths.root, 'build', 'index.html')).toString();
     response.send(html.replace(
-      'payload=false',
+      /(payload=false)|(payload=!)/,
       `payload=${CircularJSON.stringify(payload)}`
     ));
   }).catch((error) => {
