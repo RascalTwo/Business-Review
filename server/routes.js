@@ -59,8 +59,6 @@ module.exports = (Server) => {
       /(payload=false)|(payload=!1)/,
       `payload=${CircularJSON.stringify(payload)}`
     ));
-  }).catch((error) => {
-    response.status(500).send(error);
   }));
 
   Server.app.post(
