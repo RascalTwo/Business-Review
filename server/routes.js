@@ -63,8 +63,10 @@ module.exports = (Server) => {
     response.status(500).send(error);
   }));
 
+  // #region Business
+
   Server.app.post(
-    '/api/add_business',
+    '/api/business',
     check('name', invalidParamMessage('name', 'string'))
       .exists().isString().trim()
       .isLength({
@@ -113,14 +115,22 @@ module.exports = (Server) => {
         name, type, address, city, state, postalCode
       } = response.locals.data;
 
-      Server.db.addBusiness(name, type, address, city, state, postalCode)
+      return Server.db.addBusiness(name, type, address, city, state, postalCode)
         .then(result => response.send(result))
         .catch(error => response.status(500).send(error));
     }
   );
 
+  Server.app.delete('/api/business/:id', (request, response) => Server.db.deleteBusiness(request.params.id)
+    .then(result => response.send(result))
+    .catch(error => response.status(500).send(error)));
+
+  // #endregion
+
+  // #region Review
+
   Server.app.post(
-    '/api/add_review',
+    '/api/review',
     check('businessId', invalidParamMessage('businessId', 'string'))
       .exists().isNumeric().toInt(),
     check('score', invalidParamMessage('score', 'number'))
@@ -142,4 +152,10 @@ module.exports = (Server) => {
         .catch(error => response.status(500).send(error));
     }
   );
+
+  Server.app.delete('/api/review/:id', (request, response) => Server.db.deleteReview(request.params.id)
+    .then(result => response.send(result))
+    .catch(error => response.status(500).send(error)));
+
+  // #endregion
 };

@@ -41,17 +41,20 @@ const parseErrorMessage = message => message.split('\n').slice(1).reduce((params
  *
  * @param {String} path Path to make request to.
  * @param {any} data JSON data to encode.
+ * @param {String} [method='POST'] Method to make request with.
  *
  * @returns {Promise<Object>} API Response.
  */
-function fetchAPI(path, data) {
-  return fetch(baseUrl + path, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json'
-    },
-    body: JSON.stringify(data)
-  }).then(response => response.json()).then((json) => {
+function fetchAPI(path, data, method = 'POST') {
+  return fetch(
+    baseUrl + path,
+    Object.assign({ method }, data ? {
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    } : null)
+  ).then(response => response.json()).then((json) => {
     expect(json).toBeInstanceOf(Object);
 
     expect(json).toHaveProperty('success');
@@ -145,8 +148,8 @@ test('/api', startupServer(() => {
 }));
 
 
-describe('/api/add_business', () => {
-  const apiPath = '/api/add_business';
+describe('POST /api/business', () => {
+  const apiPath = '/api/business';
   test('required paramaters listed', startupServer(async () => {
     const json = await fetchAPI(apiPath);
     const messages = parseErrorMessage(json.message[0]);
@@ -223,8 +226,35 @@ describe('/api/add_business', () => {
   }));
 });
 
-describe('/api/add_review', () => {
-  const apiPath = '/api/add_review';
+describe('DELETE /api/business/:id', () => {
+  const apiPath = '/api/business';
+  test('deletes business and related entities', startupServer(async (instance) => {
+    mockData(`${instance.paths.data}/database.db`);
+
+    const json = await fetchAPI(`${apiPath}/1`, null, 'DELETE');
+
+    expect(json.success).toBe(true);
+
+    let found = await instance.db.db.get('SELECT * FROM business WHERE id = ?', 1);
+    expect(found).toBeUndefined();
+
+    found = await instance.db.db.all('SELECT * FROM review WHERE businessId = ?', 1);
+    expect(found.length).toBe(0);
+
+    found = await instance.db.db.all('SELECT * FROM photo WHERE businessId = ?', 1);
+    expect(found.length).toBe(0);
+  }));
+
+
+  test('fails when business does not exist', startupServer(async () => {
+    const json = await fetchAPI(`${apiPath}/9000`, null, 'DELETE');
+
+    expect(json.success).toBe(false);
+  }));
+});
+
+describe('POST /api/review', () => {
+  const apiPath = '/api/review';
   test('required paramaters listed', startupServer(async () => {
     const json = await fetchAPI(apiPath, undefined);
     const messages = parseErrorMessage(json.message[0]);
@@ -250,7 +280,7 @@ describe('/api/add_review', () => {
   }));
 
   test('is usable', startupServer(async () => {
-    await fetchAPI('/api/add_business', {
+    await fetchAPI('/api/business', {
       name: 'Testing',
       address: '1234 test st.',
       city: 'testville',
@@ -278,5 +308,43 @@ describe('/api/add_review', () => {
 
     expect(when).toBeGreaterThanOrEqual(now - 1000);
     expect(when).toBeLessThanOrEqual(now + 1000);
+  }));
+});
+
+
+describe('DELETE /api/review/:id', () => {
+  const apiPath = '/api/review';
+  test('deletes', startupServer(async (instance) => {
+    await fetchAPI('/api/business', {
+      name: 'Testing',
+      address: '1234 test st.',
+      city: 'testville',
+      state: 'TS',
+      postalCode: '53253'
+    });
+
+    let json = await fetchAPI(apiPath, {
+      businessId: 1,
+      userId: 1,
+      score: 5,
+      text: 'This should be enough for the minimum limit'
+    });
+
+    const { id } = json.data;
+
+    json = await fetchAPI(`${apiPath}/${id}`, null, 'DELETE');
+
+    expect(json.success).toBe(true);
+
+    const found = await instance.db.db.get('SELECT * FROM review WHERE id = ?', id);
+
+    expect(found).toBeUndefined();
+  }));
+
+
+  test('fails when review does not exist', startupServer(async () => {
+    const json = await fetchAPI(`${apiPath}/9000`, null, 'DELETE');
+
+    expect(json.success).toBe(false);
   }));
 });

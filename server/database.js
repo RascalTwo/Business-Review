@@ -220,4 +220,54 @@ module.exports = class Database {
       }));
     });
   }
+
+
+  /**
+   * Delete a business by ID.
+   *
+   * Also deletes all photo and reviews related to said business.
+   *
+   * @param {String} id ID of business to delete.
+   *
+   * @returns {Promise<API_Response>}
+   */
+  deleteBusiness(id) {
+    return this.db.run('DELETE FROM business WHERE id = ?;', id).then((result) => {
+      if (!result.changes) {
+        return {
+          success: false,
+          message: ['Business not found', 'warn']
+        };
+      }
+      return this.db.run('DELETE FROM review WHERE businessId = ?', id)
+        .then(() => this.db.run('DELETE FROM photo WHERE businessId = ?', id))
+        .then(() => ({
+          success: true,
+          message: ['Business successfully deleted', 'success']
+        }));
+    });
+  }
+
+
+  /**
+   * Delete a review by ID.
+   *
+   * @param {String} id ID of review to delete.
+   *
+   * @returns {Promise<API_Response>}
+   */
+  deleteReview(id) {
+    return this.db.run('DELETE FROM review WHERE id = ?;', id).then((result) => {
+      if (!result.changes) {
+        return {
+          success: false,
+          message: ['Review not found', 'warn']
+        };
+      }
+      return {
+        success: true,
+        message: ['Review successfully deleted', 'success']
+      };
+    });
+  }
 };
