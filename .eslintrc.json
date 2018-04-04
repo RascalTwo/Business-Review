@@ -26,6 +26,7 @@
         "valid-typeof": "warn",
         "linebreak-style": "off",
         "max-len": "off",
-        "react/prefer-stateless-function": "warn"
+        "react/prefer-stateless-function": "off",
+        "jsx-a11y/anchor-is-valid": "off"
     }
 }
