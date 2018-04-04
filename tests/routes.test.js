@@ -35,6 +35,14 @@ const parseErrorMessage = message => message.split('\n').slice(1).reduce((params
   [line.match(/'(.*)'/)[1]]: line
 }), {});
 
+/**
+ * Parse the contents of text within single-quotes.
+ *
+ * @param {String} string String to parse.
+ *
+ * @returns {Array<String>} Array of single-quote contents.
+ */
+const parseQuotes = string => string.match(/('.*?')/g).map(word => word.slice(1, -1));
 
 /**
  * Make a fetch POST request to an API, expecting JSON.
@@ -46,6 +54,8 @@ const parseErrorMessage = message => message.split('\n').slice(1).reduce((params
  * @returns {Promise<Object>} API Response.
  */
 function fetchAPI(path, data, method = 'POST') {
+  let isJSON = true;
+
   return fetch(
     baseUrl + path,
     Object.assign({ method }, data ? {
@@ -54,7 +64,17 @@ function fetchAPI(path, data, method = 'POST') {
       },
       body: JSON.stringify(data)
     } : null)
-  ).then(response => response.json()).then((json) => {
+  ).then((response) => {
+    if (!response.headers.get('content-type').toLowerCase().includes('application/json')) {
+      isJSON = false;
+      return response.text();
+    }
+    return response.json();
+  }).then((json) => {
+    if (!isJSON) {
+      fail(json);
+      return json;
+    }
     expect(json).toBeInstanceOf(Object);
 
     expect(json).toHaveProperty('success');
@@ -346,5 +366,229 @@ describe('DELETE /api/review/:id', () => {
     const json = await fetchAPI(`${apiPath}/9000`, null, 'DELETE');
 
     expect(json.success).toBe(false);
+  }));
+});
+
+describe('PATCH /api/review/:id', () => {
+  const apiPath = '/api/review';
+  test('required paramaters listed', startupServer(async () => {
+    const json = await fetchAPI(`${apiPath}/1`, null, 'PATCH');
+
+    expect(json.success).toBe(false);
+
+    expect(json.message[0].includes('At least one value must be supplied: ')).toBe(true);
+
+    expect(parseQuotes(json.message[0])).toEqual(['score', 'text']);
+  }));
+
+  test('updates', startupServer(async (instance) => {
+    await fetchAPI('/api/business', {
+      name: 'Testing',
+      address: '1234 test st.',
+      city: 'testville',
+      state: 'TS',
+      postalCode: '53253'
+    });
+
+    const expected = {
+      businessId: 1,
+      userId: 1,
+      score: 5,
+      text: 'This should be enough for the minimum limit'
+    };
+
+    const changes = {
+      score: 10,
+      text: 'This is long enough for update text passing the limit'
+    };
+
+    let json = await fetchAPI(apiPath, expected);
+
+    const { id } = json.data;
+
+    const now = Date.now();
+
+    const verifyResult = (actualParam, expectedResult) => {
+      const actual = Object.assign({}, actualParam);
+      const when = actual.date;
+      delete actual.date;
+
+      expect(when).toBeGreaterThanOrEqual(now - 1000);
+      expect(when).toBeLessThanOrEqual(now + 1000);
+
+      expect(actual).toEqual(expectedResult);
+    };
+
+    json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+
+    expect(json.success).toBe(true);
+
+    const fullExpected = Object.assign(expected, changes, {
+      id
+    });
+
+    verifyResult(json.data, fullExpected);
+
+    const found = await instance.db.db.get('SELECT * FROM review WHERE id = ?', id);
+
+    verifyResult(found, fullExpected);
+  }));
+
+  test('does not update when data matches', startupServer(async () => {
+    await fetchAPI('/api/business', {
+      name: 'Testing',
+      address: '1234 test st.',
+      city: 'testville',
+      state: 'TS',
+      postalCode: '53253'
+    });
+
+    const expected = {
+      businessId: 1,
+      userId: 1,
+      score: 5,
+      text: 'This should be enough for the minimum limit'
+    };
+
+    const changes = {
+      score: 5,
+    };
+
+    let json = await fetchAPI(apiPath, expected);
+
+    const { id } = json.data;
+
+    json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+
+    expect(json.success).toBe(false);
+  }));
+
+  test('fails when review does not exist', startupServer(async () => {
+    const json = await fetchAPI(`${apiPath}/9000`, {
+      score: 10
+    }, 'PATCH');
+
+    expect(json.success).toBe(false);
+
+    expect(json.message[0]).toBe('Review not found');
+  }));
+});
+
+describe('PATCH /api/business/:id', () => {
+  const apiPath = '/api/business';
+  test('required paramaters listed', startupServer(async () => {
+    const json = await fetchAPI(`${apiPath}/1`, null, 'PATCH');
+
+    expect(json.success).toBe(false);
+
+    expect(json.message[0].includes('At least one value must be supplied: ')).toBe(true);
+
+    expect(parseQuotes(json.message[0])).toEqual(['name', 'type', 'address', 'city', 'state', 'postalCode', 'purchased']);
+  }));
+
+  test('updates', startupServer(async (instance) => {
+    const expected = {
+      name: 'Testing',
+      address: '1234 test st.',
+      city: 'testville',
+      state: 'TS',
+      postalCode: '53253'
+    };
+
+    await fetchAPI('/api/business', expected);
+
+    const changes = {
+      type: 'new type',
+      name: 'New testing',
+      purchased: true
+    };
+
+    let json = await fetchAPI(apiPath, expected);
+
+    const { id } = json.data;
+
+    json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+
+    expect(json.success).toBe(true);
+
+    const fullExpected = Object.assign(expected, changes, {
+      id: 1,
+      purchased: 1
+    });
+
+    expect(json.data).toEqual(fullExpected);
+
+    const found = await instance.db.db.get('SELECT * FROM business WHERE id = ?', id);
+    expect(found).toEqual(fullExpected);
+  }));
+
+  test('can nullify properties', startupServer(async (instance) => {
+    const expected = {
+      name: 'Testing',
+      type: 'real type',
+      address: '1234 test st.',
+      city: 'testville',
+      state: 'TS',
+      postalCode: '53253'
+    };
+
+    await fetchAPI('/api/business', expected);
+
+    const changes = {
+      type: null
+    };
+
+    let json = await fetchAPI(apiPath, expected);
+
+    const { id } = json.data;
+
+    json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+
+    expect(json.success).toBe(true);
+
+    const fullExpected = Object.assign(expected, changes, {
+      id: 1,
+      purchased: null
+    });
+
+    expect(json.data).toEqual(fullExpected);
+
+    const found = await instance.db.db.get('SELECT * FROM business WHERE id = ?', id);
+    expect(found).toEqual(fullExpected);
+  }));
+
+  test('does not update when data matches', startupServer(async () => {
+    const expected = {
+      name: 'Testing',
+      address: '1234 test st.',
+      city: 'testville',
+      state: 'TS',
+      postalCode: '53253'
+    };
+
+    await fetchAPI('/api/business', expected);
+
+    const changes = {
+      type: null,
+      city: 'testville',
+    };
+
+    let json = await fetchAPI(apiPath, expected);
+
+    const { id } = json.data;
+
+    json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+
+    expect(json.success).toBe(false);
+  }));
+
+  test('fails when business does not exist', startupServer(async () => {
+    const json = await fetchAPI(`${apiPath}/9000`, {
+      name: 'bobby'
+    }, 'PATCH');
+
+    expect(json.success).toBe(false);
+
+    expect(json.message[0]).toBe('Business not found');
   }));
 });

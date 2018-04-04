@@ -3,7 +3,7 @@ const path = require('path');
 
 const CircularJSON = require('circular-json');
 
-const { check, validationResult } = require('express-validator/check');
+const { check, validationResult, oneOf } = require('express-validator/check');
 const { matchedData } = require('express-validator/filter');
 
 /**
@@ -59,9 +59,7 @@ module.exports = (Server) => {
       /(payload=false)|(payload=!1)/,
       `payload=${CircularJSON.stringify(payload)}`
     ));
-  }).catch((error) => {
-    response.status(500).send(error);
-  }));
+  }).catch(error => response.status(500).send(error)));
 
   // #region Business
 
@@ -117,13 +115,82 @@ module.exports = (Server) => {
 
       return Server.db.addBusiness(name, type, address, city, state, postalCode)
         .then(result => response.send(result))
-        .catch(error => response.status(500).send(error));
+        .catch(error => response.status(500).send({
+          success: false,
+          message: [error, 'error']
+        }));
     }
   );
 
   Server.app.delete('/api/business/:id', (request, response) => Server.db.deleteBusiness(request.params.id)
     .then(result => response.send(result))
-    .catch(error => response.status(500).send(error)));
+    .catch(error => response.status(500).send({
+      success: false,
+      message: [error, 'error']
+    })));
+
+
+  Server.app.patch(
+    '/api/business/:id',
+    oneOf([
+      check('name', invalidParamMessage('name', 'string'))
+        .exists().isString().trim()
+        .isLength({
+          min: 4,
+          max: 200
+        })
+        .withMessage(invalidLengthMessage('name', 4, 200)),
+      check('type', invalidParamMessage('type', 'string'))
+        .exists(),
+      check('address', invalidParamMessage('address', 'string'))
+        .exists().isString().trim()
+        .isLength({
+          min: 4,
+          max: 50
+        })
+        .withMessage(invalidLengthMessage('address', 4, 50)),
+      check('city', invalidParamMessage('city', 'string'))
+        .exists().isString().trim()
+        .isLength({
+          min: 3,
+          max: 100
+        })
+        .withMessage(invalidLengthMessage('city', 3, 100)),
+      check('state', invalidParamMessage('state', 'string'))
+        .exists().isString().trim()
+        .isLength({
+          min: 2,
+          max: 25
+        })
+        .withMessage(invalidLengthMessage('state', 2, 25)),
+      check('postalCode', invalidParamMessage('postalCode', 'string'))
+        .exists().isString().trim()
+        .isLength({
+          min: 3,
+          max: 11
+        })
+        .withMessage(invalidLengthMessage('postalCode', 3, 11)),
+      check('purchased', invalidParamMessage('purchased', 'boolean'))
+        .exists().isBoolean()
+    ], "At least one value must be supplied: 'name', 'type', 'address', 'city', 'state', 'postalCode', 'purchased'"),
+    handleValidation,
+    (request, response) => {
+      const { type } = response.locals.data;
+      if (type && (type.length < 5 || type.length > 25)) {
+        return response.status(422).send({
+          success: false,
+          message: [invalidLengthMessage('type', 5, 25), 'error']
+        });
+      }
+
+      return Server.db.editEntity('Business', request.params.id, response.locals.data)
+        .then(result => response.send(result))
+        .catch(error => response.status(500).send({
+          success: false,
+          message: [error, 'error']
+        }));
+    }
+  );
 
   // #endregion
 
@@ -149,13 +216,43 @@ module.exports = (Server) => {
       const { businessId, score, text } = response.locals.data;
       return Server.db.addReview(businessId, 1, score, text)
         .then(result => response.send(result))
-        .catch(error => response.status(500).send(error));
+        .catch(error => response.status(500).send({
+          success: false,
+          message: [error, 'error']
+        }));
     }
   );
 
   Server.app.delete('/api/review/:id', (request, response) => Server.db.deleteReview(request.params.id)
     .then(result => response.send(result))
-    .catch(error => response.status(500).send(error)));
+    .catch(error => response.status(500).send({
+      success: false,
+      message: [error, 'error']
+    })));
+
+  Server.app.patch(
+    '/api/review/:id',
+    oneOf([
+      check('score', invalidParamMessage('score', 'number'))
+        .exists().isNumeric().toInt()
+        .isInt({ min: 0, max: 10 })
+        .withMessage("'score' must have a value between 0 and 10"),
+      check('text', invalidParamMessage('text', 'string'))
+        .exists().isString().trim()
+        .isLength({
+          min: 25,
+          max: 300
+        })
+        .withMessage(invalidLengthMessage('text', 25, 300))
+    ], "At least one value must be supplied: 'score', 'text'"),
+    handleValidation,
+    (request, response) => Server.db.editEntity('Review', request.params.id, response.locals.data)
+      .then(result => response.send(result))
+      .catch(error => response.status(500).send({
+        success: false,
+        message: [error, 'error']
+      }))
+  );
 
   // #endregion
 };

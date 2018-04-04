@@ -270,4 +270,52 @@ module.exports = class Database {
       };
     });
   }
+
+
+  /**
+   * Edit either a 'Business' or 'Review'.
+   *
+   * @param {String} id ID of entity to update.
+   * @param {Object} updates Object of updates to make.
+   *
+   * @returns {Promise<API_Response>}
+   */
+  editEntity(name, id, updates) {
+    if (name !== 'Business' && name !== 'Review') {
+      return Promise.resolve({
+        success: false,
+        message: [`'${name}' not supported, only 'Business' and 'Review' are supported`, 'error']
+      });
+    }
+
+    return this.db.get(`SELECT * FROM ${name.toLowerCase()} WHERE id = ?`, id).then((entity) => {
+      if (!entity) {
+        return {
+          success: false,
+          message: [`${name} not found`, 'warn']
+        };
+      }
+
+      const changes = Object.entries(updates)
+        .filter(entry => entity[entry[0]] !== entry[1])
+        .reduce((obj, entry) => Object.assign(obj, { [entry[0]]: entry[1] }), {});
+
+      if (!Object.keys(changes).length) {
+        return {
+          success: false,
+          message: ['None of the provided updates contained new data', 'warn']
+        };
+      }
+
+      return this.db.run(
+        `UPDATE ${name.toLowerCase()} SET ${Object.keys(changes).map(key => `${key} = ?`).join(', ')} WHERE id = ?;`,
+        ...Object.values(changes), id
+      ).then(() => this.db.get(`SELECT * FROM ${name.toLowerCase()} WHERE id = ?`, id))
+        .then(updated => ({
+          success: true,
+          message: [`${name} successfully updated`, 'success'],
+          data: updated
+        }));
+    });
+  }
 };

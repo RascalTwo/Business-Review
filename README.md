@@ -56,6 +56,30 @@ The server-side tests are located in `./tests/`, while the client-side tests are
 
 The server-side tests output coverage reports to `./coverage/`, you can open the `index.html` file in this directory to view the lines directly.
 
+## Routes
+
+### API
+
+The API routes are all under the `/api/` path.
+
+To add a new entity, make a `POST` request to the entity name singular:
+
+- `/api/entity`
+- `/api/business`
+- `/api/review`
+
+To update an existing entity make a `PATCH` request with the fields to update to the entity address:
+
+- `/api/entity/1`
+- `/api/business/1`
+- `/api/review/1`
+
+To delete an entity, make a `DELETE` request to the entity address:
+
+- `/api/entity/1`
+- `/api/business/1`
+- `/api/review/1`
+
 ## Mock Data
 
 The directory `./mock_data/` contains a `.sql` recipe and a script to execute said recipe.

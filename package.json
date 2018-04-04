@@ -1,6 +1,6 @@
 {
   "name": "business-review",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "dependencies": {
     "circular-json": "^0.5.1",
@@ -18,7 +18,7 @@
   "scripts": {
     "pre-commit": "CI=true npm-run-all eslint test",
     "eslint": "eslint --ext .js --ext .jsx server.js server src tests",
-    "test": "npm-run-all test-server test-react",
+    "test": "CI=true npm-run-all test-server test-react",
     "test-react": "react-scripts test --env=jsdom",
     "test-server": "jest --notify --runInBand ./tests",
     "test-server-test": "jest --notify --runInBand",
