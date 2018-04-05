@@ -38,6 +38,7 @@ const handleValidation = (request, response, next) => {
   if (!errors.isEmpty()) {
     response.status(422).send({
       success: false,
+      // Convert the object of errors into a string of the error messages seperated by new lines.
       message: [Object.values(errors.mapped()).reduce((message, object) => `${message}\n${object.msg}`, ''), 'error']
     });
     return;
@@ -52,13 +53,14 @@ const handleValidation = (request, response, next) => {
  */
 const handleAPIRejection = response => error => response.status(500).send({
   success: false,
-  message: [error instanceof Error ? `${error.name}${error.message}\n${error.stack}` : error.toString(), 'error']
+  message: [error instanceof Error ? `${error.name}: ${error.message}\n${error.stack}` : error.toString(), 'error']
 });
 
 module.exports = (Server) => {
   Server.app.get('/api', (_, response) => response.send({
     timestamp: Date.now()
   }));
+
 
   Server.app.get('/', (_, response) => Server.db.getBusinesses().then((businesses) => {
     const html = fs.readFileSync(path.join(Server.paths.root, 'build', 'index.html')).toString();
@@ -68,7 +70,9 @@ module.exports = (Server) => {
     ));
   }).catch(error => response.status(500).send(error)));
 
+
   // #region Business
+
 
   Server.app.get('/api/businesses', (request, response) => Server.db.getBusinesses().then(businesses => response.send({
     success: true,
@@ -76,13 +80,14 @@ module.exports = (Server) => {
     cdata: CircularJSON.stringify(businesses)
   })).catch(handleAPIRejection(response)));
 
+
   Server.app.get('/api/business/:id', (request, response) => Server.db.getBusiness(Number(request.params.id))
     .then(result => response.send({
       success: result.success,
       message: result.message,
       cdata: CircularJSON.stringify(result.data)
-    }))
-    .catch(handleAPIRejection(response)));
+    })).catch(handleAPIRejection(response)));
+
 
   Server.app.post(
     '/api/business',
@@ -130,6 +135,7 @@ module.exports = (Server) => {
       .withMessage(invalidLengthMessage('postalCode', 3, 11)),
     handleValidation,
     (request, response) => {
+      // Using destructing over Object.values() in order to maintain order.
       const {
         name, type, address, city, state, postalCode
       } = response.locals.data;
@@ -139,10 +145,6 @@ module.exports = (Server) => {
         .catch(handleAPIRejection(response));
     }
   );
-
-  Server.app.delete('/api/business/:id', (request, response) => Server.db.deleteBusiness(Number(request.params.id))
-    .then(result => response.send(result))
-    .catch(handleAPIRejection(response)));
 
 
   Server.app.patch(
@@ -190,6 +192,8 @@ module.exports = (Server) => {
     ], "At least one value must be supplied: 'name', 'type', 'address', 'city', 'state', 'postalCode', 'purchased'"),
     handleValidation,
     (request, response) => {
+      // Since the type can be null to remove, it must be manually
+      // be verified if it's not null.
       const { type } = response.locals.data;
       if (type && (type.length < 5 || type.length > 25)) {
         return response.status(422).send({
@@ -204,15 +208,22 @@ module.exports = (Server) => {
     }
   );
 
-  // #endregion
 
+  Server.app.delete('/api/business/:id', (request, response) => Server.db.deleteBusiness(Number(request.params.id))
+    .then(result => response.send(result))
+    .catch(handleAPIRejection(response)));
+
+
+  // #endregion
   // #region Review
+
 
   Server.app.get('/api/reviews', (request, response) => Server.db.getReviews().then(reviews => response.send({
     success: true,
     message: [`${reviews.length} reviews fetched`, 'success'],
     cdata: CircularJSON.stringify(reviews)
   })).catch(handleAPIRejection(response)));
+
 
   Server.app.get('/api/review/:id', (request, response) => Server.db.getReview(Number(request.params.id))
     .then(result => response.send({
@@ -221,6 +232,7 @@ module.exports = (Server) => {
       cdata: CircularJSON.stringify(result.data)
     }))
     .catch(handleAPIRejection(response)));
+
 
   Server.app.post(
     '/api/review',
@@ -240,15 +252,14 @@ module.exports = (Server) => {
     handleValidation,
     (request, response) => {
       const { businessId, score, text } = response.locals.data;
+
+      // TODO: Replace this user ID here with actual user ID.
       return Server.db.addReview(businessId, 1, score, text)
         .then(result => response.send(result))
         .catch(handleAPIRejection(response));
     }
   );
 
-  Server.app.delete('/api/review/:id', (request, response) => Server.db.deleteReview(Number(request.params.id))
-    .then(result => response.send(result))
-    .catch(handleAPIRejection(response)));
 
   Server.app.patch(
     '/api/review/:id',
@@ -270,6 +281,12 @@ module.exports = (Server) => {
       .then(result => response.send(result))
       .catch(handleAPIRejection(response))
   );
+
+
+  Server.app.delete('/api/review/:id', (request, response) => Server.db.deleteReview(Number(request.params.id))
+    .then(result => response.send(result))
+    .catch(handleAPIRejection(response)));
+
 
   // #endregion
 };
