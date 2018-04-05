@@ -50,8 +50,8 @@ class Server {
 
     return this.db.init().then(() => {
       if (process.env.NODE_ENV === 'production') return Promise.resolve();
-      return this.db.getPayload().then((payload) => {
-        fs.writeFileSync(path.resolve(__dirname, 'src', 'hot_data.json'), CircularJSON.stringify(payload, null, '  '));
+      return this.db.getBusinesses().then((businesses) => {
+        fs.writeFileSync(path.resolve(__dirname, 'src', 'hot_data.json'), CircularJSON.stringify(businesses, null, '  '));
       });
     }).then(() => {
       routes(this);

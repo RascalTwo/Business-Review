@@ -1,6 +1,6 @@
 {
   "name": "business-review",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": true,
   "dependencies": {
     "circular-json": "^0.5.1",

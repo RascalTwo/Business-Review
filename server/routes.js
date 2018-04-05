@@ -47,21 +47,42 @@ const handleValidation = (request, response, next) => {
   next();
 };
 
+/**
+ * Return a function to handle an error from an API endpoint.
+ */
+const handleAPIRejection = response => error => response.status(500).send({
+  success: false,
+  message: [error instanceof Error ? `${error.name}${error.message}\n${error.stack}` : error.toString(), 'error']
+});
 
 module.exports = (Server) => {
   Server.app.get('/api', (_, response) => response.send({
     timestamp: Date.now()
   }));
 
-  Server.app.get('/', (_, response) => Server.db.getPayload().then((payload) => {
+  Server.app.get('/', (_, response) => Server.db.getBusinesses().then((businesses) => {
     const html = fs.readFileSync(path.join(Server.paths.root, 'build', 'index.html')).toString();
     response.send(html.replace(
       /(payload=false)|(payload=!1)/,
-      `payload=${CircularJSON.stringify(payload)}`
+      `payload=${CircularJSON.stringify(businesses)}`
     ));
   }).catch(error => response.status(500).send(error)));
 
   // #region Business
+
+  Server.app.get('/api/businesses', (request, response) => Server.db.getBusinesses().then(businesses => response.send({
+    success: true,
+    message: [`${businesses.length} businesses fetched`, 'success'],
+    cdata: CircularJSON.stringify(businesses)
+  })).catch(handleAPIRejection(response)));
+
+  Server.app.get('/api/business/:id', (request, response) => Server.db.getBusiness(Number(request.params.id))
+    .then(result => response.send({
+      success: result.success,
+      message: result.message,
+      cdata: CircularJSON.stringify(result.data)
+    }))
+    .catch(handleAPIRejection(response)));
 
   Server.app.post(
     '/api/business',
@@ -115,19 +136,13 @@ module.exports = (Server) => {
 
       return Server.db.addBusiness(name, type, address, city, state, postalCode)
         .then(result => response.send(result))
-        .catch(error => response.status(500).send({
-          success: false,
-          message: [error, 'error']
-        }));
+        .catch(handleAPIRejection(response));
     }
   );
 
-  Server.app.delete('/api/business/:id', (request, response) => Server.db.deleteBusiness(request.params.id)
+  Server.app.delete('/api/business/:id', (request, response) => Server.db.deleteBusiness(Number(request.params.id))
     .then(result => response.send(result))
-    .catch(error => response.status(500).send({
-      success: false,
-      message: [error, 'error']
-    })));
+    .catch(handleAPIRejection(response)));
 
 
   Server.app.patch(
@@ -183,18 +198,29 @@ module.exports = (Server) => {
         });
       }
 
-      return Server.db.editEntity('Business', request.params.id, response.locals.data)
+      return Server.db.editEntity('Business', Number(request.params.id), response.locals.data)
         .then(result => response.send(result))
-        .catch(error => response.status(500).send({
-          success: false,
-          message: [error, 'error']
-        }));
+        .catch(handleAPIRejection(response));
     }
   );
 
   // #endregion
 
   // #region Review
+
+  Server.app.get('/api/reviews', (request, response) => Server.db.getReviews().then(reviews => response.send({
+    success: true,
+    message: [`${reviews.length} reviews fetched`, 'success'],
+    cdata: CircularJSON.stringify(reviews)
+  })).catch(handleAPIRejection(response)));
+
+  Server.app.get('/api/review/:id', (request, response) => Server.db.getReview(Number(request.params.id))
+    .then(result => response.send({
+      success: result.success,
+      message: result.message,
+      cdata: CircularJSON.stringify(result.data)
+    }))
+    .catch(handleAPIRejection(response)));
 
   Server.app.post(
     '/api/review',
@@ -216,19 +242,13 @@ module.exports = (Server) => {
       const { businessId, score, text } = response.locals.data;
       return Server.db.addReview(businessId, 1, score, text)
         .then(result => response.send(result))
-        .catch(error => response.status(500).send({
-          success: false,
-          message: [error, 'error']
-        }));
+        .catch(handleAPIRejection(response));
     }
   );
 
-  Server.app.delete('/api/review/:id', (request, response) => Server.db.deleteReview(request.params.id)
+  Server.app.delete('/api/review/:id', (request, response) => Server.db.deleteReview(Number(request.params.id))
     .then(result => response.send(result))
-    .catch(error => response.status(500).send({
-      success: false,
-      message: [error, 'error']
-    })));
+    .catch(handleAPIRejection(response)));
 
   Server.app.patch(
     '/api/review/:id',
@@ -246,12 +266,9 @@ module.exports = (Server) => {
         .withMessage(invalidLengthMessage('text', 25, 300))
     ], "At least one value must be supplied: 'score', 'text'"),
     handleValidation,
-    (request, response) => Server.db.editEntity('Review', request.params.id, response.locals.data)
+    (request, response) => Server.db.editEntity('Review', Number(request.params.id), response.locals.data)
       .then(result => response.send(result))
-      .catch(error => response.status(500).send({
-        success: false,
-        message: [error, 'error']
-      }))
+      .catch(handleAPIRejection(response))
   );
 
   // #endregion

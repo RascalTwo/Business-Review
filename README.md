@@ -62,6 +62,18 @@ The server-side tests output coverage reports to `./coverage/`, you can open the
 
 The API routes are all under the `/api/` path.
 
+To get an array of entites, make a `GET` request to the entity name plural:
+
+- `/api/entities`
+- `/api/businesses`
+- `/api/reviews`
+
+To get a single entity, make a `GET` request to the entity address:
+
+- `/api/entity/1`
+- `/api/business/1`
+- `/api/review/1`
+
 To add a new entity, make a `POST` request to the entity name singular:
 
 - `/api/entity`

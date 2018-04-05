@@ -1,6 +1,7 @@
 const fs = require('fs');
 
 const fetch = require('node-fetch');
+const CircularJSON = require('circular-json');
 const Server = require('./../server.js')();
 
 const mockData = require('./../mock_data/mock-data.js')();
@@ -592,3 +593,68 @@ describe('PATCH /api/business/:id', () => {
     expect(json.message[0]).toBe('Business not found');
   }));
 });
+
+test('GET /api/businesses', startupServer(async (instance) => {
+  mockData(`${instance.paths.data}/database.db`);
+
+  const json = await fetchAPI('/api/businesses', null, 'GET');
+
+  expect(json.success).toBe(true);
+  expect(json).toHaveProperty('cdata');
+
+  const cdata = CircularJSON.parse(json.cdata);
+
+  expect(cdata.length).toBe(2);
+
+  cdata.forEach((business) => {
+    expect(business.reviews.length).not.toBe(0);
+    expect(business.photos.length).not.toBe(0);
+  });
+}));
+
+test('GET /api/reviews', startupServer(async (instance) => {
+  mockData(`${instance.paths.data}/database.db`);
+
+  const json = await fetchAPI('/api/reviews', null, 'GET');
+
+  expect(json.success).toBe(true);
+  expect(json).toHaveProperty('cdata');
+
+  const cdata = CircularJSON.parse(json.cdata);
+
+  expect(cdata.length).toBe(3);
+
+  cdata.forEach((review) => {
+    expect(review.business).toBeInstanceOf(Object);
+    expect(review.user).toBeInstanceOf(Object);
+  });
+}));
+
+test('GET /api/review/:id', startupServer(async (instance) => {
+  mockData(`${instance.paths.data}/database.db`);
+
+  const json = await fetchAPI('/api/review/1', null, 'GET');
+
+  expect(json.success).toBe(true);
+  expect(json).toHaveProperty('cdata');
+
+  const cdata = CircularJSON.parse(json.cdata);
+
+  expect(cdata.business).toBeInstanceOf(Object);
+  expect(cdata.user).toBeInstanceOf(Object);
+}));
+
+
+test('GET /api/business/:id', startupServer(async (instance) => {
+  mockData(`${instance.paths.data}/database.db`);
+
+  const json = await fetchAPI('/api/business/1', null, 'GET');
+
+  expect(json.success).toBe(true);
+  expect(json).toHaveProperty('cdata');
+
+  const cdata = CircularJSON.parse(json.cdata);
+
+  expect(cdata.reviews.length).not.toBe(0);
+  expect(cdata.photos.length).not.toBe(0);
+}));
