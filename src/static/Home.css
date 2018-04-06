@@ -1,7 +1,3 @@
-#app {
-  display: flex;
-  flex-direction: column;
-}
 
 .home-content {
   display: grid;
@@ -61,12 +57,30 @@
 }
 
 .browse-button:hover {
-  background: #fcba41;  
+  background: #fcba41;
   transform: translateY(-1px);
   box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
 .browse-button:active {
-  background: #eea41b;  
+  background: #eea41b;
   transform: translateY(+1px);
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+}
+
+.spinner > div {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+.api-test.up .spinner > div{
+  background-color: rgb(91, 241, 54);  
+}
+
+.api-test.down .spinner > div{
+  background-color: rgb(241, 66, 54);  
 }

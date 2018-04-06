@@ -1,8 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
-import Payload from './payload';
-import photoMap from './photoMap';
-import App from './app';
+import App from './components/App';
 
-ReactDOM.render(<App payload={Payload} photoMap={photoMap} />, document.getElementById('react-root'));
+ReactDOM.render(<App />, document.getElementById('react-root'));

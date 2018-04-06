@@ -1,11 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import CircularJSON from 'circular-json';
-import Header from './Header';
-import Footer from './Footer';
-import './app.css';
+import { Link } from 'react-router-dom';
+import '../static/Home.css';
 
-class App extends Component {
+class Home extends Component {
   /**
    * Create an instance of the App.
    */
@@ -13,7 +11,6 @@ class App extends Component {
     super(props, context);
 
     this.state = {
-      apiTime: null,
       apiSuccess: null
     };
   }
@@ -33,7 +30,6 @@ class App extends Component {
       .then(r => r.json())
       .then(response =>
         this.setState({
-          apiTime: response.timestamp,
           apiSuccess: true
         }))
       .catch(() =>
@@ -46,52 +42,60 @@ class App extends Component {
    * Render the component.
    */
   render() {
-    const photos = this.props.payload[0]
-      ? this.props.payload[0].photos.map(photo => (
-        <img
-          key={photo.id}
-          src={this.props.photoMap[`${photo.id}.jpg`]}
-          alt={photo.caption}
-          title={photo.caption}
-        />
-      ))
-      : false;
+    // const photos = this.props.payload[0]
+    //   ? this.props.payload[0].photos.map(photo => (
+    //     <img
+    //         key={photo.id}
+    //         src={this.props.photoMap[`${photo.id}.jpg`]}
+    //         alt={photo.caption}
+    //         title={photo.caption}
+    //       />
+    //   ))
+    //   : false;
 
     return (
-      <div id="app">
-        <Header />
+      <div id="home">
         <div className="container">
           <div className="home-content">
             <div className="intro">
-              <div style={{ backgroundColor: (this.state.apiSuccess ? 'green' : 'red'), color: 'white' }}>{new Date(this.state.apiTime).toString()}</div>
-              <button onClick={() => this.updateTime()}>Update Time</button>
-              {/* <pre style={{ textAlign: 'left' }}>{CircularJSON.stringify(this.props.payload, null, '  ')}</pre>
-              {photos} */}
               <p>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Cumque perspiciatis impedit delectus aspernatur sint distinctio.
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Cumque
+                perspiciatis impedit delectus aspernatur sint distinctio.
               </p>
+              <div
+                className={`api-test ${this.state.apiSuccess ? 'up' : 'down'}`}
+              >
+                <div className="spinner">
+                  <div className="double-bounce1" />
+                </div>
+              </div>
             </div>
             <div className="browse-reviews">
               <h2>Reviews</h2>
               <p>
-                Eaque excepturi, cum laborum eveniet doloribus ducimus sed, adipisci id accusantium, earum vel impedit.
-                Lorem ipsum dolor, sit amet consectetur adipisicing elit.
-                Ipsum ex velit officia aspernatur consequuntur? Doloremque, laudantium.
+                Eaque excepturi, cum laborum eveniet doloribus ducimus sed,
+                adipisci id accusantium, earum vel impedit. Lorem ipsum dolor,
+                sit amet consectetur adipisicing elit. Ipsum ex velit officia
+                aspernatur consequuntur? Doloremque, laudantium.
               </p>
-              <a href="#reviews" className="browse-button">Browse Reviews</a>
+              <Link to="/reviews" className="browse-button">
+                Browse Reviews
+              </Link>
             </div>
             <div className="browse-places">
               <h2>Places</h2>
               <p>
-                Eaque excepturi, cum laborum eveniet doloribus ducimus sed, adipisci id accusantium, earum vel impedit.
-                Lorem ipsum dolor, sit amet consectetur adipisicing elit.
-                Ipsum ex velit officia aspernatur consequuntur? Doloremque, laudantium.
+                Eaque excepturi, cum laborum eveniet doloribus ducimus sed,
+                adipisci id accusantium, earum vel impedit. Lorem ipsum dolor,
+                sit amet consectetur adipisicing elit. Ipsum ex velit officia
+                aspernatur consequuntur? Doloremque, laudantium.
               </p>
-              <a href="#businesses" className="browse-button">Browse Places</a>
+              <Link to="/businesses" className="browse-button">
+                Browse Places
+              </Link>
             </div>
           </div>
         </div>
-        <Footer />
       </div>
     );
   }
@@ -137,9 +141,4 @@ const businessShape = PropTypes.shape({
   photos: PropTypes.arrayOf(photoShape)
 });
 
-App.propTypes = {
-  payload: PropTypes.arrayOf(businessShape).isRequired,
-  photoMap: PropTypes.objectOf(String).isRequired
-};
-
-export default App;
+export default Home;

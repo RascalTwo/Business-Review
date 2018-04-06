@@ -68,8 +68,7 @@ module.exports = (Server) => {
       /(payload=false)|(payload=!1)/,
       `payload=${CircularJSON.stringify(businesses)}`
     ));
-  }).catch(error => response.status(500).send(error)));
-
+  }));
 
   // #region Business
 
