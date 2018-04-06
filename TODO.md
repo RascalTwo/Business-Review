@@ -6,7 +6,6 @@ Make all express server files ES6 via `babel`.
 
 Create Tests:
 
-- Database methods.
 - Edge-cases.
 
 *****
@@ -30,14 +29,7 @@ Implement user authentication.
 
 *****
 
-Finish creating API routes:
-
-- Editing
-	- Business
-	- Review
-- Deletion:
-	- Business
-	- Review
+Make API route paramater verification non-repetitive.
 
 *****
 
