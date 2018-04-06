@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import CircularJSON from 'circular-json';
 import { Link } from 'react-router-dom';
 import '../static/Home.css';
 
@@ -12,7 +11,6 @@ class Home extends Component {
     super(props, context);
 
     this.state = {
-      apiTime: null,
       apiSuccess: null
     };
   }
@@ -32,7 +30,6 @@ class Home extends Component {
       .then(r => r.json())
       .then(response =>
         this.setState({
-          apiTime: response.timestamp,
           apiSuccess: true
         }))
       .catch(() =>
@@ -61,6 +58,10 @@ class Home extends Component {
         <div className="container">
           <div className="home-content">
             <div className="intro">
+              <p>
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Cumque
+                perspiciatis impedit delectus aspernatur sint distinctio.
+              </p>
               <div
                 className={`api-test ${this.state.apiSuccess ? 'up' : 'down'}`}
               >
@@ -68,10 +69,6 @@ class Home extends Component {
                   <div className="double-bounce1" />
                 </div>
               </div>
-              <p>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Cumque
-                perspiciatis impedit delectus aspernatur sint distinctio.
-              </p>
             </div>
             <div className="browse-reviews">
               <h2>Reviews</h2>
@@ -143,10 +140,5 @@ const businessShape = PropTypes.shape({
   reviews: PropTypes.arrayOf(reviewShape),
   photos: PropTypes.arrayOf(photoShape)
 });
-
-Home.propTypes = {
-  payload: PropTypes.arrayOf(businessShape).isRequired,
-  photoMap: PropTypes.objectOf(String).isRequired
-};
 
 export default Home;

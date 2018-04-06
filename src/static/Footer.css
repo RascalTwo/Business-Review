@@ -1,8 +1,8 @@
 footer {
   margin: 3em 0 0;
-  background: #31393c;
+  background: #fdfffc;
   height: 1fr;
-  color: #fdfffc;
+  color: #000;
   padding-top: 3rem;
   white-space: nowrap;
 }
@@ -27,7 +27,7 @@ footer h5 {
 
 .footer-link {
   text-decoration: none;
-  color: #fdfffc;
+  color: #000;
   font-size: 0.85em;
 }
 

@@ -11,7 +11,7 @@ html {
 }
 
 html {
-  font: 16px/1.5 'Muli', sans-serif;
+  font: 16px/1.5 "Muli", sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -20,11 +20,15 @@ html {
 body {
   margin: 0;
   color: rgba(0, 0, 0, 0.87);
-  background: #FDFFFC;
+  background: #fdfffc;
   display: flex;
   flex-direction: column;
   margin: auto;
   padding: 0;
+}
+
+::-webkit-scrollbar {
+  display: none;
 }
 
 #app {
@@ -36,4 +40,56 @@ body {
   max-width: 1080px;
   margin: auto;
   padding: 0 1.5em;
+}
+
+@keyframes appear {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+    max-height: 0;
+  }
+  50% {
+    opacity: 0;
+    transform: translateY(15px);
+    max-height: 0;
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0px);
+    max-height: 500;
+  }
+}
+
+@keyframes disappear {
+  0% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+}
+
+.min-height {
+  min-height: 750px;
+}
+
+.fade-enter {
+  animation: appear 400ms ease-in-out;
+}
+
+.fade-exit {
+  animation: disappear 200ms ease-out;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transform: translateY(0px);
+}
+
+.fade-exit-done {
+  opacity: 0;
+  transform: translateY(0px);
 }
