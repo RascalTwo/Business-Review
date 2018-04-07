@@ -54,10 +54,10 @@ class Server {
         fs.writeFileSync(path.resolve(__dirname, 'src', 'hot_data.json'), CircularJSON.stringify(businesses, null, '  '));
       });
     }).then(() => {
-      routes(this);
-
       // Serve all requests to '/static/*' from the './build/static/' folder.
       this.app.use('/static', express.static(path.join(this.root, 'build', 'static')));
+
+      routes(this);
 
       return this;
     });

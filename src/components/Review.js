@@ -1,16 +1,18 @@
 import React from 'react';
+import { reviewShape } from '../proptypes';
 
 class Review extends React.Component {
   render() {
     return (
       <div id="review">
         <div className="container">
-          {/* eslint-disable-next-line */}
-          <p>Review {this.props.match.params.reviewId} loaded, this is a placholder.</p>
+          <p>Review {this.props.id} loaded, this is a placholder.</p>
         </div>
       </div>
     );
   }
 }
+
+Review.propTypes = reviewShape.isRequired;
 
 export default Review;

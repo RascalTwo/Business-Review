@@ -61,14 +61,19 @@ module.exports = (Server) => {
     timestamp: Date.now()
   }));
 
-
-  Server.app.get('/', (_, response) => Server.db.getBusinesses().then((businesses) => {
-    const html = fs.readFileSync(path.join(Server.paths.root, 'build', 'index.html')).toString();
-    response.send(html.replace(
-      /(payload=false)|(payload=!1)/,
-      `payload=${CircularJSON.stringify(businesses)}`
-    ));
-  }));
+  // Using this middleware to catch all requests that are non-API and redirect
+  // them the index.html so the react-router can handle them.
+  Server.app.use((request, response, next) => {
+    const flag = /^\/api/.test(request.url);
+    if (flag) return next();
+    return Server.db.getBusinesses().then((businesses) => {
+      const html = fs.readFileSync(path.join(Server.paths.root, 'build', 'index.html')).toString();
+      response.send(html.replace(
+        /(payload=false)|(payload=!1)/,
+        `payload=${CircularJSON.stringify(businesses)}`
+      ));
+    }).catch(error => response.status(500).send(error));
+  });
 
   // #region Business
 
