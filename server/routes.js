@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
+const passport = require('passport');
 const CircularJSON = require('circular-json');
 
 const { check, validationResult, oneOf } = require('express-validator/check');
@@ -48,6 +49,29 @@ const handleValidation = (request, response, next) => {
   next();
 };
 
+
+/**
+ * Express middleware to ensure user is logged in.
+ *
+ * @param {String} [redirect=undefined] Path to redirect to if not logged in.
+ * If not included, it is assumed this is an API and therefore an API response will be sent.
+ */
+const ensureLoggedIn = redirect => (request, response, next) => {
+  if (request.isAuthenticated()) return next();
+
+  if (!redirect) {
+    return response.send({
+      success: false,
+      message: ['Unauthorized', 'error']
+    });
+  }
+
+  if (redirect.includes('return=')) return response.redirect(redirect + encodeURIComponent(request.url));
+
+  return response.redirect(redirect);
+};
+
+
 /**
  * Return a function to handle an error from an API endpoint.
  */
@@ -75,6 +99,74 @@ module.exports = (Server) => {
     }).catch(error => response.status(500).send(error));
   });
 
+  // #region User
+
+  Server.app.post('/api/login', (request, response, next) => passport.authenticate('local', (error, user) => {
+    if (error) return next(error);
+    if (!user) {
+      return response.send({
+        success: false,
+        message: ['User account not found', 'error']
+      });
+    }
+
+    return request.login(user, (err) => {
+      if (err) return next(err);
+
+      return response.send({
+        success: true,
+        message: ['Successfully logged in', 'success']
+      });
+    });
+  })(request, response, next));
+
+  Server.app.get('/api/logout', (request, response) => {
+    request.logout();
+    return response.send({
+      success: true,
+      message: ['Successfully logged out', 'success']
+    });
+  });
+
+  Server.app.get('/api/user', ensureLoggedIn(), (request, response) => response.send({
+    success: true,
+    data: request.user
+  }));
+
+  Server.app.post(
+    '/api/user',
+    check('username', invalidParamMessage('username', 'string'))
+      .exists().isString()
+      .isLength({
+        min: 5,
+        max: 100
+      })
+      .withMessage(invalidLengthMessage('username', 5, 100)),
+    check('password', invalidParamMessage('password', 'string'))
+      .exists().isString()
+      .isLength({
+        min: 8,
+        max: 100
+      })
+      .withMessage(invalidLengthMessage('password', 8, 100)),
+    handleValidation,
+    (request, response) => {
+      const { username, password } = response.locals.data;
+      return Server.db.addUser(username, password)
+        .then((result) => {
+          if (!result.success) return result;
+
+          return new Promise((resolve, reject) => request.login(result.data, (error) => {
+            if (error) return reject(error);
+            return resolve(result);
+          }));
+        })
+        .then(result => response.send(result))
+        .catch(handleAPIRejection(response));
+    }
+  );
+
+  // #endregion
   // #region Business
 
 
@@ -95,6 +187,7 @@ module.exports = (Server) => {
 
   Server.app.post(
     '/api/business',
+    ensureLoggedIn(),
     check('name', invalidParamMessage('name', 'string'))
       .exists().isString().trim()
       .isLength({
@@ -153,6 +246,7 @@ module.exports = (Server) => {
 
   Server.app.patch(
     '/api/business/:id',
+    ensureLoggedIn(),
     oneOf([
       check('name', invalidParamMessage('name', 'string'))
         .exists().isString().trim()
@@ -213,7 +307,7 @@ module.exports = (Server) => {
   );
 
 
-  Server.app.delete('/api/business/:id', (request, response) => Server.db.deleteBusiness(Number(request.params.id))
+  Server.app.delete('/api/business/:id', ensureLoggedIn(), (request, response) => Server.db.deleteBusiness(Number(request.params.id))
     .then(result => response.send(result))
     .catch(handleAPIRejection(response)));
 
@@ -240,6 +334,7 @@ module.exports = (Server) => {
 
   Server.app.post(
     '/api/review',
+    ensureLoggedIn(),
     check('businessId', invalidParamMessage('businessId', 'string'))
       .exists().isNumeric().toInt(),
     check('score', invalidParamMessage('score', 'number'))
@@ -267,6 +362,7 @@ module.exports = (Server) => {
 
   Server.app.patch(
     '/api/review/:id',
+    ensureLoggedIn(),
     oneOf([
       check('score', invalidParamMessage('score', 'number'))
         .exists().isNumeric().toInt()
@@ -287,7 +383,7 @@ module.exports = (Server) => {
   );
 
 
-  Server.app.delete('/api/review/:id', (request, response) => Server.db.deleteReview(Number(request.params.id))
+  Server.app.delete('/api/review/:id', ensureLoggedIn(), (request, response) => Server.db.deleteReview(Number(request.params.id))
     .then(result => response.send(result))
     .catch(handleAPIRejection(response)));
 

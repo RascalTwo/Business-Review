@@ -8,6 +8,7 @@ const mockData = require('./../mock_data/mock-data.js')();
 
 const baseUrl = 'http://localhost:5325';
 
+// #region Helper Functions
 
 /**
  * Parse error message to <param-message} object map.
@@ -52,46 +53,81 @@ const startupServer = next => () => {
 
 
 /**
- * Make a fetch POST request to an API, expecting JSON.
+ * Make a fetch request to an API, expecting JSON.
  *
  * @param {String} path Path to make request to.
- * @param {any} data JSON data to encode.
- * @param {String} [method='POST'] Method to make request with.
+ * @param {Object} [options={}] Options for the request.
+ * @param {Object} [data=undefined] Data to encode for the body.
  *
- * @returns {Promise<Object>} API Response.
+ * @returns {Promise<{json: Object, response: Response, text?: String}>} Response and JSON data.
  */
-function fetchAPI(path, data, method = 'POST') {
+function fetchAPI(path, options = {}, data) {
   let isJSON = true;
+  let response = null;
 
-  return fetch(
-    baseUrl + path,
-    Object.assign({ method }, data ? {
-      headers: {
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    } : null)
-  ).then((response) => {
-    if (!response.headers.get('content-type').toLowerCase().includes('application/json')) {
+  const headers = options.headers ? Object.assign({}, {
+    'content-type': 'application/json'
+  }, options.headers) : {
+    'content-type': 'application/json'
+  };
+
+  Object.assign(options, { headers }, data ? {
+    body: JSON.stringify(data)
+  } : null);
+
+  return fetch(baseUrl + path, options).then((receivedResponse) => {
+    response = receivedResponse;
+
+    if (!receivedResponse.headers.get('content-type').toLowerCase().includes('application/json')) {
       isJSON = false;
-      return response.text();
+      return receivedResponse.text();
     }
-    return response.json();
+    return receivedResponse.json();
   }).then((json) => {
     if (!isJSON) {
       fail(json);
-      return json;
+      return { text: json, response };
     }
     expect(json).toBeInstanceOf(Object);
 
     expect(json).toHaveProperty('success');
     expect(typeof json.success).toBe('boolean');
 
-    expect(json).toHaveProperty('message');
-    expect(Array.isArray(json.message)).toBeTruthy();
+    if (json.message) expect(Array.isArray(json.message)).toBeTruthy();
 
-    return json;
+    return { json, response };
   });
+}
+
+
+/**
+ * Login to the server.
+ *
+ * @returns {Promise<Object>} Headers for next requests.
+ */
+async function login() {
+  const data = {
+    username: 'testuser',
+    password: 'testpassword'
+  };
+
+  let { json, response } = await fetchAPI('/api/login', { method: 'POST' }, data);
+
+  if (json.success) {
+    return {
+      cookie: response.headers.get('set-cookie')
+    };
+  }
+
+  ({ json, response } = await fetchAPI('/api/user', { method: 'POST' }, data));
+
+  if (json.success) {
+    return {
+      cookie: response.headers.get('set-cookie')
+    };
+  }
+
+  return Promise.reject(json);
 }
 
 
@@ -99,13 +135,14 @@ function fetchAPI(path, data, method = 'POST') {
  * Test an API paramaters range and type restrictions.
  *
  * @param {String} path API endpoint path.
+ * @param {String} method HTTP method for API path.
  * @param {String} param Name of param to test.
  * @param {String} type Type of param.
  * @param {any} value Value of paramater that will be successful.
  * @param {Number} [min=undefined] Minimum length/value of param.
  * @param {Number} [max=undefined] Maximum length/value of param.
  */
-function testAPIParamRangeAndType(path, param, type, value, min, max) {
+function testAPIParamRangeAndType(path, method, param, type, value, min, max) {
   const postValue = value;
   let minMaxData;
 
@@ -118,7 +155,9 @@ function testAPIParamRangeAndType(path, param, type, value, min, max) {
 
   describe(param, () => {
     test(`type enforced to ${type}`, startupServer(async () => {
-      const json = await fetchAPI(path, { [param]: postValue });
+      const headers = await login();
+
+      const { json } = await fetchAPI(path, { method, headers }, { [param]: postValue });
       const messages = parseErrorMessage(json.message[0]);
 
       // Error message for this paramater does not exist.
@@ -128,19 +167,21 @@ function testAPIParamRangeAndType(path, param, type, value, min, max) {
     if (min === undefined && max === undefined) return;
 
     test(`length enforced to between ${min} and ${max}`, startupServer(async () => {
-      let json = await fetchAPI(path, { [param]: minMaxData[0] });
+      const headers = await login();
+
+      let { json } = await fetchAPI(path, { method, headers }, { [param]: minMaxData[0] });
       let messages = parseErrorMessage(json.message[0]);
 
       // Error received when value is below min.
       expect(messages[param].includes(`${min} and ${max}`)).toBeTruthy();
 
-      json = await fetchAPI(path, { [param]: minMaxData[1] });
+      ({ json } = await fetchAPI(path, { method, headers }, { [param]: minMaxData[1] }));
       messages = parseErrorMessage(json.message[0]);
 
       // Error received when value is above max.
       expect(messages[param].includes(`${min} and ${max}`)).toBeTruthy();
 
-      json = await fetchAPI(path, { [param]: minMaxData[2] });
+      ({ json } = await fetchAPI(path, { method, headers }, { [param]: minMaxData[2] }));
       messages = parseErrorMessage(json.message[0]);
 
       // Error does not exist when value is correct.
@@ -149,6 +190,26 @@ function testAPIParamRangeAndType(path, param, type, value, min, max) {
   });
 }
 
+
+/**
+ * Test tnat a route requires user authentication.
+ *
+ * @param {String} path Path of the route.
+ * @param {String} method Method of the route.
+ */
+function testAPILoginRequired(path, method) {
+  test('login required', startupServer(async () => {
+    let { json } = await fetchAPI(path, { method });
+    expect(json.message[0]).toBe('Unauthorized');
+
+    const headers = await login();
+
+    ({ json } = await fetchAPI(path, { method, headers }));
+    expect(json.message[0]).not.toBe('Unauthorized');
+  }));
+}
+
+// #endregion
 
 test('/', startupServer(async (instance) => {
   expect(fs.existsSync(`${instance.root}/build/index.html`)).toBeTruthy();
@@ -181,13 +242,55 @@ test('/api', startupServer(() => {
 }));
 
 
+describe('authentication', () => {
+  describe('/api/user', () => {
+    describe('GET & POST', () => {
+      test('', startupServer(async () => {
+        const headers = await login();
+
+        const { json } = await fetchAPI('/api/user', { headers });
+
+        expect(json.success).toBe(true);
+        expect(json.data.id).toBe(1);
+      }));
+    });
+  });
+  describe('/api/login', () => {
+    describe('POST', () => {
+      test('', startupServer(async () => {
+        // Creates test user
+        await login();
+
+        const headers = await login();
+
+        const { json } = await fetchAPI('/api/user', { headers });
+
+        expect(json.success).toBe(true);
+      }));
+    });
+  });
+  describe('/api/logout', () => {
+    describe('GET', () => {
+      test('', startupServer(async () => {
+        const headers = await login();
+
+        let { json } = await fetchAPI('/api/user', { headers });
+        expect(json.success).toBe(true);
+
+        ({ json } = await fetchAPI('/api/logout', { headers }));
+        expect(json.success).toBe(true);
+      }));
+    });
+  });
+});
+
 describe('/api/business', () => {
   describe('/api/businesses', () => {
     describe('GET', () => {
       test('', startupServer(async (instance) => {
         mockData(`${instance.paths.data}/database.db`);
 
-        const json = await fetchAPI('/api/businesses', null, 'GET');
+        const { json } = await fetchAPI('/api/businesses');
 
         expect(json.success).toBe(true);
         expect(json).toHaveProperty('cdata');
@@ -209,7 +312,7 @@ describe('/api/business', () => {
       test('', startupServer(async (instance) => {
         mockData(`${instance.paths.data}/database.db`);
 
-        const json = await fetchAPI('/api/business/1', null, 'GET');
+        const { json } = await fetchAPI('/api/business/1');
 
         expect(json.success).toBe(true);
         expect(json).toHaveProperty('cdata');
@@ -223,9 +326,12 @@ describe('/api/business', () => {
 
     describe('PATCH', () => {
       const apiPath = '/api/business';
-      test('required paramaters listed', startupServer(async () => {
-        const json = await fetchAPI(`${apiPath}/1`, null, 'PATCH');
+      testAPILoginRequired(`${apiPath}/1`, 'PATCH');
 
+      test('required paramaters listed', startupServer(async () => {
+        const headers = await login();
+
+        const { json } = await fetchAPI(`${apiPath}/1`, { method: 'PATCH', headers });
         expect(json.success).toBe(false);
 
         expect(json.message[0].includes('At least one value must be supplied: ')).toBe(true);
@@ -234,6 +340,8 @@ describe('/api/business', () => {
       }));
 
       test('updates', startupServer(async (instance) => {
+        const headers = await login();
+
         const expected = {
           name: 'Testing',
           address: '1234 test st.',
@@ -242,7 +350,7 @@ describe('/api/business', () => {
           postalCode: '53253'
         };
 
-        await fetchAPI('/api/business', expected);
+        await fetchAPI('/api/business', { method: 'POST', headers }, expected);
 
         const changes = {
           type: 'new type',
@@ -250,11 +358,11 @@ describe('/api/business', () => {
           purchased: true
         };
 
-        let json = await fetchAPI(apiPath, expected);
+        let { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         const { id } = json.data;
 
-        json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+        ({ json } = await fetchAPI(`${apiPath}/${id}`, { method: 'PATCH', headers }, changes));
 
         expect(json.success).toBe(true);
 
@@ -270,6 +378,8 @@ describe('/api/business', () => {
       }));
 
       test('can nullify properties', startupServer(async (instance) => {
+        const headers = await login();
+
         const expected = {
           name: 'Testing',
           type: 'real type',
@@ -279,17 +389,17 @@ describe('/api/business', () => {
           postalCode: '53253'
         };
 
-        await fetchAPI('/api/business', expected);
+        await fetchAPI('/api/business', { method: 'POST', headers }, expected);
 
         const changes = {
           type: null
         };
 
-        let json = await fetchAPI(apiPath, expected);
+        let { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         const { id } = json.data;
 
-        json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+        ({ json } = await fetchAPI(`${apiPath}/${id}`, { method: 'PATCH', headers }, changes));
 
         expect(json.success).toBe(true);
 
@@ -305,6 +415,8 @@ describe('/api/business', () => {
       }));
 
       test('does not update when data matches', startupServer(async () => {
+        const headers = await login();
+
         const expected = {
           name: 'Testing',
           address: '1234 test st.',
@@ -313,26 +425,28 @@ describe('/api/business', () => {
           postalCode: '53253'
         };
 
-        await fetchAPI('/api/business', expected);
+        await fetchAPI('/api/business', { method: 'POST', headers }, expected);
 
         const changes = {
           type: null,
           city: 'testville',
         };
 
-        let json = await fetchAPI(apiPath, expected);
+        let { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         const { id } = json.data;
 
-        json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+        ({ json } = await fetchAPI(`${apiPath}/${id}`, { method: 'PATCH', headers }, changes));
 
         expect(json.success).toBe(false);
       }));
 
       test('fails when business does not exist', startupServer(async () => {
-        const json = await fetchAPI(`${apiPath}/9000`, {
+        const headers = await login();
+
+        const { json } = await fetchAPI(`${apiPath}/9000`, { method: 'PATCH', headers }, {
           name: 'bobby'
-        }, 'PATCH');
+        });
 
         expect(json.success).toBe(false);
 
@@ -342,10 +456,14 @@ describe('/api/business', () => {
 
     describe('DELETE', () => {
       const apiPath = '/api/business';
+      testAPILoginRequired(`${apiPath}/1`, 'DELETE');
+
       test('deletes business and related entities', startupServer(async (instance) => {
+        const headers = await login();
+
         mockData(`${instance.paths.data}/database.db`);
 
-        const json = await fetchAPI(`${apiPath}/1`, null, 'DELETE');
+        const { json } = await fetchAPI(`${apiPath}/1`, { method: 'DELETE', headers });
 
         expect(json.success).toBe(true);
 
@@ -361,7 +479,9 @@ describe('/api/business', () => {
 
 
       test('fails when business does not exist', startupServer(async () => {
-        const json = await fetchAPI(`${apiPath}/9000`, null, 'DELETE');
+        const headers = await login();
+
+        const { json } = await fetchAPI(`${apiPath}/9000`, { method: 'DELETE', headers });
 
         expect(json.success).toBe(false);
       }));
@@ -371,21 +491,27 @@ describe('/api/business', () => {
   describe('/api/business', () => {
     describe('POST', () => {
       const apiPath = '/api/business';
+      testAPILoginRequired(apiPath, 'POST');
+
       test('required paramaters listed', startupServer(async () => {
-        const json = await fetchAPI(apiPath);
+        const headers = await login();
+
+        const { json } = await fetchAPI(apiPath, { method: 'POST', headers });
         const messages = parseErrorMessage(json.message[0]);
 
         expect(Object.keys(messages)).toEqual(['name', 'address', 'city', 'state', 'postalCode']);
       }));
 
-      testAPIParamRangeAndType(apiPath, 'name', 'string', 'Name', 4, 200);
-      testAPIParamRangeAndType(apiPath, 'type', 'string', 'ValidType', 5, 25);
-      testAPIParamRangeAndType(apiPath, 'address', 'string', 'Address', 4, 50);
-      testAPIParamRangeAndType(apiPath, 'city', 'string', 'City', 3, 100);
-      testAPIParamRangeAndType(apiPath, 'state', 'string', 'NY', 2, 25);
-      testAPIParamRangeAndType(apiPath, 'postalCode', 'string', '508', 3, 11);
+      testAPIParamRangeAndType(apiPath, 'POST', 'name', 'string', 'Name', 4, 200);
+      testAPIParamRangeAndType(apiPath, 'POST', 'type', 'string', 'ValidType', 5, 25);
+      testAPIParamRangeAndType(apiPath, 'POST', 'address', 'string', 'Address', 4, 50);
+      testAPIParamRangeAndType(apiPath, 'POST', 'city', 'string', 'City', 3, 100);
+      testAPIParamRangeAndType(apiPath, 'POST', 'state', 'string', 'NY', 2, 25);
+      testAPIParamRangeAndType(apiPath, 'POST', 'postalCode', 'string', '508', 3, 11);
 
       test('is usable', startupServer(async () => {
+        const headers = await login();
+
         const expected = {
           name: 'Testing',
           type: 'test place',
@@ -394,7 +520,7 @@ describe('/api/business', () => {
           state: 'TS',
           postalCode: '53253'
         };
-        const json = await fetchAPI(apiPath, expected);
+        const { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         expect(json.success).toBe(true);
         expect(json.data).toEqual(Object.assign({
@@ -404,6 +530,8 @@ describe('/api/business', () => {
       }));
 
       test('type is optional', startupServer(async () => {
+        const headers = await login();
+
         const expected = {
           name: 'Testing',
           address: '1234 test st.',
@@ -411,7 +539,7 @@ describe('/api/business', () => {
           state: 'TS',
           postalCode: '53253'
         };
-        const json = await fetchAPI(apiPath, expected);
+        const { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         expect(json.success).toBe(true);
         expect(json.data).toEqual(Object.assign({
@@ -421,6 +549,8 @@ describe('/api/business', () => {
       }));
 
       test('duplicates are prevented', startupServer(async () => {
+        const headers = await login();
+
         const expected = {
           name: 'Testing',
           type: 'duplicate',
@@ -429,7 +559,7 @@ describe('/api/business', () => {
           state: 'TS',
           postalCode: '53253'
         };
-        let json = await fetchAPI(apiPath, expected);
+        let { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         expect(json.success).toBe(true);
         expect(json.data).toEqual(Object.assign({
@@ -437,7 +567,7 @@ describe('/api/business', () => {
           purchased: false
         }, expected));
 
-        json = await fetchAPI(apiPath, expected);
+        ({ json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected));
 
         expect(json.success).toBe(false);
         expect(json.data).toEqual(Object.assign({
@@ -456,7 +586,7 @@ describe('/api/review', () => {
       test('', startupServer(async (instance) => {
         mockData(`${instance.paths.data}/database.db`);
 
-        const json = await fetchAPI('/api/reviews', null, 'GET');
+        const { json } = await fetchAPI('/api/reviews');
 
         expect(json.success).toBe(true);
         expect(json).toHaveProperty('cdata');
@@ -478,7 +608,7 @@ describe('/api/review', () => {
       test('', startupServer(async (instance) => {
         mockData(`${instance.paths.data}/database.db`);
 
-        const json = await fetchAPI('/api/review/1', null, 'GET');
+        const { json } = await fetchAPI('/api/review/1');
 
         expect(json.success).toBe(true);
         expect(json).toHaveProperty('cdata');
@@ -492,8 +622,12 @@ describe('/api/review', () => {
 
     describe('PATCH', () => {
       const apiPath = '/api/review';
+      testAPILoginRequired(`${apiPath}/1`, 'PATCH');
+
       test('required paramaters listed', startupServer(async () => {
-        const json = await fetchAPI(`${apiPath}/1`, null, 'PATCH');
+        const headers = await login();
+
+        const { json } = await fetchAPI(`${apiPath}/1`, { method: 'PATCH', headers });
 
         expect(json.success).toBe(false);
 
@@ -503,7 +637,9 @@ describe('/api/review', () => {
       }));
 
       test('updates', startupServer(async (instance) => {
-        await fetchAPI('/api/business', {
+        const headers = await login();
+
+        await fetchAPI('/api/business', { method: 'POST', headers }, {
           name: 'Testing',
           address: '1234 test st.',
           city: 'testville',
@@ -523,7 +659,7 @@ describe('/api/review', () => {
           text: 'This is long enough for update text passing the limit'
         };
 
-        let json = await fetchAPI(apiPath, expected);
+        let { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         const { id } = json.data;
 
@@ -540,7 +676,7 @@ describe('/api/review', () => {
           expect(actual).toEqual(expectedResult);
         };
 
-        json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+        ({ json } = await fetchAPI(`${apiPath}/${id}`, { method: 'PATCH', headers }, changes));
 
         expect(json.success).toBe(true);
 
@@ -556,7 +692,9 @@ describe('/api/review', () => {
       }));
 
       test('does not update when data matches', startupServer(async () => {
-        await fetchAPI('/api/business', {
+        const headers = await login();
+
+        await fetchAPI('/api/business', { method: 'POST', headers }, {
           name: 'Testing',
           address: '1234 test st.',
           city: 'testville',
@@ -575,19 +713,21 @@ describe('/api/review', () => {
           score: 5,
         };
 
-        let json = await fetchAPI(apiPath, expected);
+        let { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         const { id } = json.data;
 
-        json = await fetchAPI(`${apiPath}/${id}`, changes, 'PATCH');
+        ({ json } = await fetchAPI(`${apiPath}/${id}`, { method: 'PATCH', headers }, changes));
 
         expect(json.success).toBe(false);
       }));
 
       test('fails when review does not exist', startupServer(async () => {
-        const json = await fetchAPI(`${apiPath}/9000`, {
+        const headers = await login();
+
+        const { json } = await fetchAPI(`${apiPath}/9000`, { method: 'PATCH', headers }, {
           score: 10
-        }, 'PATCH');
+        });
 
         expect(json.success).toBe(false);
 
@@ -597,8 +737,12 @@ describe('/api/review', () => {
 
     describe('DELETE', () => {
       const apiPath = '/api/review';
+      testAPILoginRequired(`${apiPath}/1`, 'DELETE');
+
       test('deletes', startupServer(async (instance) => {
-        await fetchAPI('/api/business', {
+        const headers = await login();
+
+        await fetchAPI('/api/business', { method: 'POST', headers }, {
           name: 'Testing',
           address: '1234 test st.',
           city: 'testville',
@@ -606,7 +750,7 @@ describe('/api/review', () => {
           postalCode: '53253'
         });
 
-        let json = await fetchAPI(apiPath, {
+        let { json } = await fetchAPI(apiPath, { method: 'POST', headers }, {
           businessId: 1,
           userId: 1,
           score: 5,
@@ -615,7 +759,7 @@ describe('/api/review', () => {
 
         const { id } = json.data;
 
-        json = await fetchAPI(`${apiPath}/${id}`, null, 'DELETE');
+        ({ json } = await fetchAPI(`${apiPath}/${id}`, { method: 'DELETE', headers }));
 
         expect(json.success).toBe(true);
 
@@ -626,7 +770,9 @@ describe('/api/review', () => {
 
 
       test('fails when review does not exist', startupServer(async () => {
-        const json = await fetchAPI(`${apiPath}/9000`, null, 'DELETE');
+        const headers = await login();
+
+        const { json } = await fetchAPI(`${apiPath}/9000`, { method: 'DELETE', headers });
 
         expect(json.success).toBe(false);
       }));
@@ -636,32 +782,40 @@ describe('/api/review', () => {
   describe('/api/review', () => {
     describe('POST', () => {
       const apiPath = '/api/review';
+      testAPILoginRequired(apiPath, 'POST');
+
       test('required paramaters listed', startupServer(async () => {
-        const json = await fetchAPI(apiPath, undefined);
+        const headers = await login();
+
+        const { json } = await fetchAPI(apiPath, { method: 'POST', headers });
         const messages = parseErrorMessage(json.message[0]);
 
         expect(Object.keys(messages)).toEqual(['businessId', 'score', 'text']);
       }));
 
-      testAPIParamRangeAndType(apiPath, 'businessId', 'number', 1);
-      testAPIParamRangeAndType(apiPath, 'score', 'number', 5, 0, 10);
-      testAPIParamRangeAndType(apiPath, 'text', 'string', 'This is just about 25 letters', 25, 300);
+      testAPIParamRangeAndType(apiPath, 'POST', 'businessId', 'number', 1);
+      testAPIParamRangeAndType(apiPath, 'POST', 'score', 'number', 5, 0, 10);
+      testAPIParamRangeAndType(apiPath, 'POST', 'text', 'string', 'This is just about 25 letters', 25, 300);
 
 
       test('business must exist', startupServer(async () => {
+        const headers = await login();
+
         const expected = {
           businessId: 9000,
           userId: 1,
           score: 5,
           text: 'This should be enough for the minimum limit'
         };
-        const json = await fetchAPI(apiPath, expected);
+        const { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         expect(json.success).toBe(false);
       }));
 
       test('is usable', startupServer(async () => {
-        await fetchAPI('/api/business', {
+        const headers = await login();
+
+        await fetchAPI('/api/business', { method: 'POST', headers }, {
           name: 'Testing',
           address: '1234 test st.',
           city: 'testville',
@@ -676,7 +830,7 @@ describe('/api/review', () => {
           text: 'This should be enough for the minimum limit'
         };
         const now = Date.now();
-        const json = await fetchAPI(apiPath, expected);
+        const { json } = await fetchAPI(apiPath, { method: 'POST', headers }, expected);
 
         expect(json.success).toBe(true);
 

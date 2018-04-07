@@ -77,6 +77,9 @@
 <key type="PRIMARY" name="">
 <part>id</part>
 </key>
+<key type="UNIQUE" name="">
+<part>username</part>
+</key>
 </table>
 <table x="100" y="100" name="photo">
 <row name="id" null="0" autoincrement="1">

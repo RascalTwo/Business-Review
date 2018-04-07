@@ -1,5 +1,6 @@
 const fs = require('fs');
 const sqlite = require('sqlite');
+const bcrypt = require('bcryptjs');
 
 /**
  * @typedef {Object} API_Response Response from an API endpoint.
@@ -86,6 +87,78 @@ module.exports = class Database {
     });
   }
 
+  // #region User
+
+  /**
+   * Return if the given username and password are valid.
+   *
+   * @param {String} username
+   * @param {String} password
+   *
+   * @returns {Promise<API_Response>}
+   */
+  canLogin(username, password) {
+    return this.db.get('SELECT * FROM user WHERE username = ? COLLATE NOCASE;', username).then((user) => {
+      if (!user) {
+        return {
+          success: false
+        };
+      }
+
+      return bcrypt.compare(password, user.passwordHash).then(success => ({
+        success,
+        data: success ? user : undefined
+      }));
+    });
+  }
+
+
+  /**
+   * Return a user by ID.
+   *
+   * @param {String} id ID of user to get.
+   *
+   * @returns {Promise<Object|null>}
+   */
+  getUser(id) {
+    return this.db.get('SELECT * FROM user WHERE id = ?', id);
+  }
+
+
+  /**
+   * Add a user to the database.
+   *
+   * @param {String} username
+   * @param {String} password
+   *
+   * @returns {Promise<API_Response>}
+   */
+  addUser(username, password) {
+    return this.db.get('SELECT * FROM user WHERE username = ? COLLATE NOCASE;', username).then((user) => {
+      if (user) {
+        return {
+          success: false,
+          message: ['Username already exists', 'warn']
+        };
+      }
+
+      return bcrypt.hash(password, 8).then(passwordHash => this.db.run(
+        'INSERT INTO user (username, passwordHash) VALUES (?, ?);',
+        username, passwordHash
+      ).then(result => ({
+        success: true,
+        message: ['User successfully added', 'success'],
+        data: {
+          id: result.lastID,
+          username,
+          passwordHash,
+          reviews: []
+        }
+      })));
+    });
+  }
+
+  // #endregion
   // #region Business
 
   /**

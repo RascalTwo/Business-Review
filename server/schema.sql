@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS 'review' (
 CREATE TABLE IF NOT EXISTS 'user' (
 	'id'            INTEGER  NOT NULL  PRIMARY KEY AUTOINCREMENT,
 	'username'      TEXT     NOT NULL,
-	'passwordHash'  TEXT     NOT NULL 
+	'passwordHash'  TEXT     NOT NULL,
+	UNIQUE (username)
 );
 
 CREATE TABLE IF NOT EXISTS 'photo' (
@@ -31,4 +32,4 @@ CREATE TABLE IF NOT EXISTS 'photo' (
 	'caption'       TEXT
 );
 
-PRAGMA user_version = 4;
+PRAGMA user_version = 5;
