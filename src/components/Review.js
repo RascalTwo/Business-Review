@@ -1,6 +1,6 @@
 import React from 'react';
 
-class Business extends React.Component {
+class Review extends React.Component {
   render() {
     return (
       <div id="review">
@@ -13,4 +13,4 @@ class Business extends React.Component {
   }
 }
 
-export default Business;
+export default Review;

@@ -5,6 +5,7 @@ class Business extends React.Component {
     return (
       <div id="business">
         <div className="container">
+          {/* eslint-disable-next-line */}
           <p>Business {this.props.match.params.businessId} loaded, this is a placholder.</p>
         </div>
       </div>

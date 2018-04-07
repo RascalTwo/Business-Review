@@ -1,7 +1,7 @@
 import fs from 'fs';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import App from '../src/components/App';
+import App from '../components/App';
 
 global.fetch = () => Promise.resolve({
   json: Promise.resolve({
@@ -9,7 +9,7 @@ global.fetch = () => Promise.resolve({
   })
 });
 
-const photoMap = fs.readdirSync(`${__dirname}/business_photos`).reduce((map, filename) => {
+const photoMap = fs.readdirSync(`${__dirname}/../business_photos`).reduce((map, filename) => {
   if (filename.startsWith('.')) return map;
 
   return Object.assign(map, {

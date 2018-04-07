@@ -42,17 +42,6 @@ class Home extends Component {
    * Render the component.
    */
   render() {
-    // const photos = this.props.payload[0]
-    //   ? this.props.payload[0].photos.map(photo => (
-    //     <img
-    //         key={photo.id}
-    //         src={this.props.photoMap[`${photo.id}.jpg`]}
-    //         alt={photo.caption}
-    //         title={photo.caption}
-    //       />
-    //   ))
-    //   : false;
-
     return (
       <div id="home">
         <div className="container">
