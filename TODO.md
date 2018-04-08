@@ -37,4 +37,6 @@ Make all paths cross-platform safe.
 
 *****
 
-Add
+Add endpoint for user deletion.
+
+Add reviews to 'user.reviews' property from user-api routes.

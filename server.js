@@ -3,6 +3,14 @@ const path = require('path');
 
 const express = require('express');
 const morgan = require('morgan');
+
+const cookieParser = require('cookie-parser');
+const expressSession = require('express-session');
+const SessionFileStore = require('session-file-store')(expressSession);
+
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+
 const CircularJSON = require('circular-json');
 
 const routes = require('./server/routes.js');
@@ -46,6 +54,14 @@ class Server {
       extended: true,
     }));
 
+    this.app.use(cookieParser('2776209b9d9d72eef92d0910e8c72e13'));
+    this.app.use(expressSession({
+      store: new SessionFileStore(),
+      secret: '2776209b9d9d72eef92d0910e8c72e13',
+      resave: true,
+      saveUninitialized: false
+    }));
+
     this.db = new Database(this);
 
     return this.db.init().then(() => {
@@ -54,6 +70,21 @@ class Server {
         fs.writeFileSync(path.resolve(__dirname, 'src', 'hot_data.json'), CircularJSON.stringify(businesses, null, '  '));
       });
     }).then(() => {
+      passport.use(new LocalStrategy((username, password, done) => this.db.canLogin(username, password).then((result) => {
+        if (result.success) return done(null, result.data);
+        return done(null, false);
+      }).catch(error => done(error, false))));
+
+      passport.serializeUser((user, done) => done(null, user.id));
+
+      passport.deserializeUser((id, done) => this.db.getUser(id).then((user) => {
+        if (user) return done(null, user);
+        return done(null, false);
+      }).catch(error => done(error, false)));
+
+      this.app.use(passport.initialize());
+      this.app.use(passport.session());
+
       // Serve all requests to '/static/*' from the './build/static/' folder.
       this.app.use('/static', express.static(path.join(this.root, 'build', 'static')));
 
