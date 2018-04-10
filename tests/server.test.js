@@ -9,7 +9,8 @@ test('has default arguments', () => {
   const instance = new Server();
   expect(instance.paths).toEqual({
     root: path.resolve(__dirname, '..'),
-    data: path.resolve(__dirname, '..', 'data')
+    data: path.resolve(__dirname, '..', 'data'),
+    photos: path.resolve(__dirname, '..', 'src', 'business_photos')
   });
   expect(instance.port).toBe(8080);
 });
@@ -17,11 +18,13 @@ test('has default arguments', () => {
 test('accepts arguments', () => {
   const instance = new Server(5325, {
     root: 'newroot',
-    data: 'newdata'
+    data: 'newdata',
+    photos: 'newphotos'
   });
   expect(instance.paths).toEqual({
     root: path.resolve(__dirname, '..'),
-    data: 'newdata'
+    data: 'newdata',
+    photos: 'newphotos'
   });
   expect(instance.port).toBe(5325);
 });

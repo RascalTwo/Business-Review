@@ -4,6 +4,8 @@ const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
 
+const multer = require('multer');
+
 const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
 const SessionFileStore = require('session-file-store')(expressSession);
@@ -27,7 +29,8 @@ class Server {
     this.port = port || process.env.PORT || 8080;
     this.root = __dirname;
     this.paths = Object.assign({
-      data: `${__dirname}/data`
+      data: `${__dirname}/data`,
+      photos: `${__dirname}/src/business_photos`
     }, paths, {
       root: __dirname
     });
@@ -35,6 +38,9 @@ class Server {
     this.app = null;
     this.db = null;
     this.httpServer = null;
+    this.upload = multer({
+      storage: multer.memoryStorage()
+    });
   }
 
   /**

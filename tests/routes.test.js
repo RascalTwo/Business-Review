@@ -1,6 +1,7 @@
 const fs = require('fs');
 
 const fetch = require('node-fetch');
+const FormData = require('form-data');
 const CircularJSON = require('circular-json');
 const Server = require('./../server.js')();
 
@@ -17,7 +18,7 @@ const baseUrl = 'http://localhost:5325';
  *
  * @returns {Object}
  */
-const parseErrorMessage = message => message.split('\n').slice(1).reduce((params, line) => Object.assign(params, {
+const parseErrorMessage = message => message.split('\n').filter(line => line).reduce((params, line) => Object.assign(params, {
   [line.match(/'(.*)'/)[1]]: line
 }), {});
 
@@ -37,12 +38,15 @@ const parseQuotes = string => string.match(/('.*?')/g).map(word => word.slice(1,
  * @param {Function<Promise>} next Actual test code
  */
 const startupServer = next => () => {
-  fs.unlinkSync(`${__dirname}/data/database.db`);
+  if (fs.existsSync(`${__dirname}/data/database.db`)) fs.unlinkSync(`${__dirname}/data/database.db`);
 
   // Construct and then start the server, next return the result of the
   // next callback, then catch the error, stop the server,
   // and fail if there was an error.
-  return new Server(5325, { data: `${__dirname}/data` }).init()
+  return new Server(5325, {
+    data: `${__dirname}/data`,
+    photos: `${__dirname}/business_photos`
+  }).init()
     .then(instance => instance.start())
     .then(instance => next(instance)
       .catch(error => error)
@@ -211,10 +215,61 @@ function testAPILoginRequired(path, method) {
 
 // #endregion
 
+describe('/api/photo', () => {
+  describe('POST', () => {
+    test('image size must be less then 5 MB', startupServer(async (instance) => {
+      await mockData(`${instance.paths.data}/database.db`);
+
+      const headers = await login();
+
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(`${__dirname}/large_image.jpg`));
+      formData.append('businessId', '1');
+      formData.append('caption', 'test caption');
+
+      const { json } = await fetchAPI('/api/photo', {
+        method: 'POST',
+        headers: formData.getHeaders(headers),
+        body: formData
+      });
+
+      expect(json.success).toBe(false);
+      expect(json.message[0]).toBe('File size is too large');
+    }));
+
+    test('works', startupServer(async (instance) => {
+      await mockData(`${instance.paths.data}/database.db`);
+
+      const headers = await login();
+
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(`${__dirname}/../public/favicon.ico`));
+      formData.append('businessId', '1');
+      formData.append('caption', 'test caption');
+
+      const { json } = await fetchAPI('/api/photo', {
+        method: 'POST',
+        headers: formData.getHeaders(headers),
+        body: formData
+      });
+
+      expect(json.success).toBe(true);
+      expect(fs.existsSync(`${instance.paths.photos}/${json.data.id}.jpg`)).toBe(true);
+
+      const orig = fs.readFileSync(`${__dirname}/../public/favicon.ico`).toString();
+      const uploaded = fs.readFileSync(`${instance.paths.photos}/${json.data.id}.jpg`).toString();
+      expect(uploaded).toBe(orig);
+
+      const found = await instance.db.db.get('SELECT * FROM photo WHERE id = ?', json.data.id);
+      expect(found).toEqual(json.data);
+    }));
+  });
+});
+
 test('/', startupServer(async (instance) => {
   expect(fs.existsSync(`${instance.root}/build/index.html`)).toBeTruthy();
 
-  mockData(`${instance.paths.data}/database.db`);
+  await mockData(`${instance.paths.data}/database.db`);
 
   return fetch(baseUrl).then((response) => {
     expect(response.status).toBe(200);
@@ -284,11 +339,12 @@ describe('authentication', () => {
   });
 });
 
+
 describe('/api/business', () => {
   describe('/api/businesses', () => {
     describe('GET', () => {
       test('', startupServer(async (instance) => {
-        mockData(`${instance.paths.data}/database.db`);
+        await mockData(`${instance.paths.data}/database.db`);
 
         const { json } = await fetchAPI('/api/businesses');
 
@@ -310,7 +366,7 @@ describe('/api/business', () => {
   describe('/api/business/:id', () => {
     describe('GET', () => {
       test('', startupServer(async (instance) => {
-        mockData(`${instance.paths.data}/database.db`);
+        await mockData(`${instance.paths.data}/database.db`);
 
         const { json } = await fetchAPI('/api/business/1');
 
@@ -461,7 +517,7 @@ describe('/api/business', () => {
       test('deletes business and related entities', startupServer(async (instance) => {
         const headers = await login();
 
-        mockData(`${instance.paths.data}/database.db`);
+        await mockData(`${instance.paths.data}/database.db`);
 
         const { json } = await fetchAPI(`${apiPath}/1`, { method: 'DELETE', headers });
 
@@ -584,7 +640,7 @@ describe('/api/review', () => {
   describe('/api/reviews', () => {
     describe('GET', () => {
       test('', startupServer(async (instance) => {
-        mockData(`${instance.paths.data}/database.db`);
+        await mockData(`${instance.paths.data}/database.db`);
 
         const { json } = await fetchAPI('/api/reviews');
 
@@ -845,5 +901,80 @@ describe('/api/review', () => {
         expect(when).toBeLessThanOrEqual(now + 1000);
       }));
     });
+  });
+});
+
+describe('/api/photo', () => {
+  const apiPath = '/api/photo';
+  testAPILoginRequired(apiPath, 'POST');
+
+  describe('POST', () => {
+    test('required paramaters listed', startupServer(async () => {
+      const headers = await login();
+
+      const { json } = await fetchAPI('/api/photo', { method: 'POST', headers });
+
+      const messages = parseErrorMessage(json.message[0]);
+      expect(Object.keys(messages)).toEqual(['file', 'businessId', 'caption']);
+    }));
+
+    test('filename must have image extension', startupServer(async () => {
+      const headers = await login();
+
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(__filename));
+      formData.append('businessId', '1');
+      formData.append('caption', 'test caption');
+
+      const { json } = await fetchAPI('/api/photo', {
+        method: 'POST',
+        headers: formData.getHeaders(headers),
+        body: formData
+      });
+
+      expect(json.success).toBe(false);
+      expect(json.message[0].includes('invalid extension')).toBe(true);
+    }));
+
+    test('file must actually be an image', startupServer(async () => {
+      if (!fs.existsSync(`${__dirname}/fake_image.jpg`)) {
+        const buffer = fs.readFileSync(__filename);
+        fs.writeFileSync(`${__dirname}/fake_image.jpg`, buffer);
+      }
+
+      const headers = await login();
+
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(`${__dirname}/fake_image.jpg`));
+      formData.append('businessId', '1');
+      formData.append('caption', 'test caption');
+
+      const { json } = await fetchAPI('/api/photo', {
+        method: 'POST',
+        headers: formData.getHeaders(headers),
+        body: formData
+      });
+
+      expect(json.success).toBe(false);
+      expect(json.message[0].includes("instead detected 'text/plain'")).toBe(true);
+    }));
+
+    test('business must exist', startupServer(async () => {
+      const headers = await login();
+
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(`${__dirname}/../public/favicon.ico`));
+      formData.append('businessId', '1');
+      formData.append('caption', 'test caption');
+
+      const { json } = await fetchAPI('/api/photo', {
+        method: 'POST',
+        headers: formData.getHeaders(headers),
+        body: formData
+      });
+
+      expect(json.success).toBe(false);
+      expect(json.message[0]).toBe('Business not found');
+    }));
   });
 });

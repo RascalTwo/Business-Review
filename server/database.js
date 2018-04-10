@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
  * @typedef {Object} API_Response Response from an API endpoint.
  * @prop {Boolean} success If the request was successful.
  * @prop {Array<String>} message A message and the level of the message.
- * @prop {any} data Data to pass to the client.
+ * @prop {any} [data=undefined] Data to pass to the client.
  */
 
 module.exports = class Database {
@@ -515,6 +515,50 @@ module.exports = class Database {
         message: ['Review successfully deleted', 'success']
       };
     });
+  }
+
+
+  // #endregion
+  // #region Photo
+
+
+  /**
+   * Upload a photo to the database.
+   *
+   * @param {Number} businessId ID of the business to upload photo for.
+   * @param {Buffer} buffer Image buffer.
+   * @param {String} caption Caption of image.
+   *
+   * @returns {Promise<API_Response>}
+   */
+  async uploadPhoto(businessId, buffer, caption) {
+    const found = await this.db.get('SELECT * FROM business WHERE id = ?', businessId);
+    if (!found) {
+      return {
+        success: false,
+        message: ['Business not found', 'warn']
+      };
+    }
+
+    const position = (await this.db.get('SELECT * FROM photo WHERE businessId = ? ORDER BY position DESC;', businessId)).position + 1;
+
+    const id = (await this.db.run(
+      'INSERT INTO photo (businessId, position, caption) VALUES (?, ?, ?)',
+      businessId, position, caption
+    )).lastID;
+
+    fs.writeFileSync(`${this.server.paths.photos}/${id}.jpg`, buffer);
+
+    return {
+      success: true,
+      message: ['Photo successfully uploaded', 'success'],
+      data: {
+        id,
+        businessId,
+        position,
+        caption
+      }
+    };
   }
 
 
