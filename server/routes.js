@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
+const mmm = require('mmmagic');
 const passport = require('passport');
 const CircularJSON = require('circular-json');
 
@@ -335,7 +336,7 @@ module.exports = (Server) => {
   Server.app.post(
     '/api/review',
     ensureLoggedIn(),
-    check('businessId', invalidParamMessage('businessId', 'string'))
+    check('businessId', invalidParamMessage('businessId', 'number'))
       .exists().isNumeric().toInt(),
     check('score', invalidParamMessage('score', 'number'))
       .exists().isNumeric().toInt()
@@ -386,6 +387,74 @@ module.exports = (Server) => {
   Server.app.delete('/api/review/:id', ensureLoggedIn(), (request, response) => Server.db.deleteReview(Number(request.params.id))
     .then(result => response.send(result))
     .catch(handleAPIRejection(response)));
+
+
+  // #endregion
+  // #region Photo
+
+
+  Server.app.post(
+    '/api/photo',
+    ensureLoggedIn(),
+    Server.upload.single('file'),
+    (request, response) => {
+      const { file } = request;
+      const { businessId, caption } = request.body;
+
+      const errorMessages = [];
+      if (!file) {
+        errorMessages.push(invalidParamMessage('file', 'file'));
+      }
+      if (!businessId || Number.isNaN(Number(businessId))) {
+        errorMessages.push(invalidParamMessage('businessId', 'number'));
+      }
+      if (!caption) {
+        errorMessages.push(invalidParamMessage('caption', 'string'));
+      }
+      if (caption && (caption.length < 5 || caption.length > 100)) {
+        errorMessages.push(invalidLengthMessage('caption', 5, 100));
+      }
+
+      if (errorMessages.length) {
+        return response.send({
+          success: false,
+          message: [errorMessages.join('\n'), 'error']
+        });
+      }
+
+      return new Promise((resolve, reject) => {
+        if (file.size > 5000000) {
+          return resolve({
+            success: false,
+            message: ['File size is too large', 'warn']
+          });
+        }
+
+        if (!file.mimetype.startsWith('image')) {
+          return resolve({
+            success: false,
+            message: ['Uploaded file has invalid extension', 'warn']
+          });
+        }
+
+        return new mmm.Magic(mmm.MAGIC_MIME_TYPE).detect(file.buffer, (error, mimetype) => {
+          if (error) return reject(error);
+
+          const success = mimetype.startsWith('image');
+          return resolve({
+            success,
+            message: success ? undefined : [`Expected mime-type of image but instead detected '${mimetype}'`, 'warn']
+          });
+        });
+      }).then((mimeResult) => {
+        if (!mimeResult.success) return response.send(mimeResult);
+
+        return Server.db.uploadPhoto(Number(businessId), file.buffer, caption)
+          .then(result => response.send(result))
+          .catch(handleAPIRejection(response));
+      }).catch(handleAPIRejection(response));
+    }
+  );
 
 
   // #endregion

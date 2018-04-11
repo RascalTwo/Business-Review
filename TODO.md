@@ -24,7 +24,7 @@ Prevent identical and nearly-identical business and review submissions.
 
 ---
 
-Implement user authentication.
+Prevent duplicate image uploads.
 
 ---
 
@@ -36,10 +36,21 @@ Make all paths cross-platform safe.
 
 ---
 
-Add endpoint for user deletion.
+Routes: 
 
 Add reviews to 'user.reviews' property from user-api routes.
 
+---
+
+- User
+	- Deletion
+	- Get
+		- Add `reviews` property to returned objects.
+- Photo
+	- Deletion
+	- Get
+	- Update
+  
 ---
 
 Rewrite router animations to use `.enter`, `.enter-active`, `.enter-done` properly
