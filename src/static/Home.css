@@ -1,12 +1,136 @@
+.home-first-section {
+  background: #3ecf8e;
+  padding: 2em 0 0;
+}
+.home-first-section .container {
+  display: flex;
+  flex-direction: column;
+  max-width: 800px;
+}
 
-.home-content {
-  display: grid;
-  grid-template-areas:
-    "intro intro"
-    "reviews places";
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 200px auto;
-  grid-gap: 4em;
+.intro {
+  grid-area: intro;
+  color: #fff;
+
+  width: 100%;
+  margin: 0 auto;
+}
+
+.intro .home-title {
+  text-align: center;
+}
+
+.intro-card {
+  height: 300px;
+  border-radius: 10px;
+  width: 100%;
+  margin: 0;
+  box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+}
+
+.intro-card .illustration {
+  width: 50%;
+  background: rgb(132, 169, 248);
+  height: 100%;
+  object-fit: cover;
+  overflow: hidden;
+  border-radius: 10px 0 0 10px;
+  padding: 2em;
+  margin: 0;
+}
+
+.intro-card .illustration p {
+  text-align: center;
+  font-size: 14px;
+  padding: 1em;
+}
+
+.pin-icon {
+  width: 150px;
+  height: 150px;
+  display: block;
+  margin: 0 auto;
+}
+
+.intro-card .text {
+  width: 50%;
+  height: 100%;
+  background: rgb(247, 247, 247);
+  border-radius: 0 10px 10px 0;
+  color: rgba(2, 4, 27, 0.788);
+  padding: 1em 2em;
+  display: flex;
+  flex-direction: column;
+}
+
+.start-browsing {
+  margin-top: 1em;
+  display: flex;
+  align-self: center;
+}
+
+.arrow-icon {
+  height: 24px;
+  width: 24px;
+  margin-left: 0.5em;
+}
+
+.text p {
+  font-size: 14px;
+  margin: 0 0 0.3em;
+}
+
+.browse-button {
+  display: inline-block;
+  text-transform: uppercase;
+  font-weight: 700;
+  height: 42px;
+  width: max-content;
+  line-height: 42px;
+  padding: 0 1em;
+  background: #f6aa1c;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 20px;
+  box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease;
+  letter-spacing: 0.1em;
+  margin: 5em 0;
+  align-self: center;
+}
+
+.browse-button:hover {
+  background: #fcba41;
+  transform: translateY(-1px);
+  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+.browse-button:active {
+  background: #eea41b;
+  transform: translateY(+1px);
+}
+
+.home-second-section {
+  padding: 70px 0;
+}
+
+.home-second-section .container {
+  max-width: 800px;
+}
+
+.promote {
+  display: flex;
+  flex-direction: column;
+}
+
+.promote p {
+  text-align: center;
+  align-self: center;
+}
+
+.promote-icon {
+  height: 300px;
 }
 
 @media only screen and (max-width: 840px) {
@@ -25,62 +149,19 @@
   .browse-button {
     width: 100%;
   }
-}
 
-.intro {
-  grid-area: intro;
-}
+  .intro-card {
+    height: 600px;
+    flex-direction: column;
+  }
 
-.browse-reviews {
-  grid-area: reviews;
-}
+  .intro-card .illustration {
+    width: 100%;
+    border-radius: 10px 10px 0 0;
+  }
 
-.browse-places {
-  grid-area: places;
-}
-
-.browse-button {
-  display: inline-block;
-  text-transform: uppercase;
-  font-weight: 700;
-  height: 42px;
-  line-height: 42px;
-  padding: 0 1em;
-  background: #f6aa1c;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 3px;
-  box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
-  transition: all 0.15s ease;
-  letter-spacing: 0.1em;
-  margin: 1em 0;
-}
-
-.browse-button:hover {
-  background: #fcba41;
-  transform: translateY(-1px);
-  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
-}
-
-.browse-button:active {
-  background: #eea41b;
-  transform: translateY(+1px);
-}
-
-.spinner {
-  width: 30px;
-  height: 30px;
-}
-
-.spinner > div {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-}
-.api-test.up .spinner > div{
-  background-color: rgb(91, 241, 54);  
-}
-
-.api-test.down .spinner > div{
-  background-color: rgb(241, 66, 54);  
+  .intro-card .text {
+    width: 100%;
+    border-radius: 0 0 10px 10px;
+  }
 }
