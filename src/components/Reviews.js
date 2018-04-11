@@ -1,5 +1,6 @@
 import React from 'react';
 import { PropTypes, reviewShape } from '../proptypes';
+import ReviewCard from './ReviewCard';
 import '../static/Reviews.css';
 
 class Reviews extends React.Component {
@@ -7,7 +8,10 @@ class Reviews extends React.Component {
     return (
       <div id="reviews">
         <div className="container">
-          <p>{this.props.items.length} Reviews loaded, this is a placholder.</p>
+          <h1>Reviews</h1>
+          <div className="reviews">
+            {this.props.items.map(review => <ReviewCard review={review} />)}
+          </div>
         </div>
       </div>
     );
