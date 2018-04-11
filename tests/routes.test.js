@@ -936,29 +936,6 @@ describe('/api/photo', () => {
       expect(json.message[0].includes('invalid extension')).toBe(true);
     }));
 
-    test('file must actually be an image', startupServer(async () => {
-      if (!fs.existsSync(`${__dirname}/fake_image.jpg`)) {
-        const buffer = fs.readFileSync(__filename);
-        fs.writeFileSync(`${__dirname}/fake_image.jpg`, buffer);
-      }
-
-      const headers = await login();
-
-      const formData = new FormData();
-      formData.append('file', fs.createReadStream(`${__dirname}/fake_image.jpg`));
-      formData.append('businessId', '1');
-      formData.append('caption', 'test caption');
-
-      const { json } = await fetchAPI('/api/photo', {
-        method: 'POST',
-        headers: formData.getHeaders(headers),
-        body: formData
-      });
-
-      expect(json.success).toBe(false);
-      expect(json.message[0].includes("instead detected 'text/plain'")).toBe(true);
-    }));
-
     test('business must exist', startupServer(async () => {
       const headers = await login();
 

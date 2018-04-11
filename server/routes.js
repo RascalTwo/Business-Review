@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-const mmm = require('mmmagic');
 const passport = require('passport');
 const CircularJSON = require('circular-json');
 
@@ -422,37 +421,23 @@ module.exports = (Server) => {
         });
       }
 
-      return new Promise((resolve, reject) => {
-        if (file.size > 5000000) {
-          return resolve({
-            success: false,
-            message: ['File size is too large', 'warn']
-          });
-        }
-
-        if (!file.mimetype.startsWith('image')) {
-          return resolve({
-            success: false,
-            message: ['Uploaded file has invalid extension', 'warn']
-          });
-        }
-
-        return new mmm.Magic(mmm.MAGIC_MIME_TYPE).detect(file.buffer, (error, mimetype) => {
-          if (error) return reject(error);
-
-          const success = mimetype.startsWith('image');
-          return resolve({
-            success,
-            message: success ? undefined : [`Expected mime-type of image but instead detected '${mimetype}'`, 'warn']
-          });
+      if (file.size > 5000000) {
+        return response.send({
+          success: false,
+          message: ['File size is too large', 'warn']
         });
-      }).then((mimeResult) => {
-        if (!mimeResult.success) return response.send(mimeResult);
+      }
 
-        return Server.db.uploadPhoto(Number(businessId), file.buffer, caption)
-          .then(result => response.send(result))
-          .catch(handleAPIRejection(response));
-      }).catch(handleAPIRejection(response));
+      if (!file.mimetype.startsWith('image')) {
+        return response.send({
+          success: false,
+          message: ['Uploaded file has invalid extension', 'warn']
+        });
+      }
+
+      return Server.db.uploadPhoto(Number(businessId), file.buffer, caption)
+        .then(result => response.send(result))
+        .catch(handleAPIRejection(response));
     }
   );
 
