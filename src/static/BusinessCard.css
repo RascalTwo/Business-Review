@@ -1,0 +1,14 @@
+.business-card {
+  max-height: 132px;
+  box-shadow: 0 3px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1em;
+  font-size: 14px;
+  border-radius: 3px;
+  background: #f7f2ea;
+  color: #35405a;
+}
+
+.business-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}

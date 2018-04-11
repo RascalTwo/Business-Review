@@ -1,4 +1,4 @@
-.reviews {
+.businesses {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-auto-flow: row dense;
@@ -6,7 +6,11 @@
 }
 
 @media only screen and (max-width: 700px) {
-  .reviews {
+  .businesses {
     grid-template-columns: 1fr;
   }
+}
+
+#businesses .container {
+  padding-top: 2em;
 }

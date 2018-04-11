@@ -1,86 +1,61 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import '../static/Home.css';
+import pinIcon from '../static/pin_icon.svg';
+import promoteIcon from '../static/promote.svg';
 
 class Home extends Component {
-  /**
-   * Create an instance of the App.
-   */
-  constructor(props, context) {
-    super(props, context);
-
-    this.state = {
-      apiSuccess: null
-    };
-  }
-
-  /**
-   * Set the time from the API when the app mounts.
-   */
-  componentDidMount() {
-    return this.updateTime();
-  }
-
-  /**
-   * Update 'state.apiTime' from the API.
-   */
-  updateTime() {
-    return fetch('/api')
-      .then(r => r.json())
-      .then(response =>
-        this.setState({
-          apiSuccess: true
-        }))
-      .catch(() =>
-        this.setState({
-          apiSuccess: false
-        }));
-  }
-
-  /**
-   * Render the component.
-   */
   render() {
     return (
       <div id="home">
-        <div className="container">
-          <div className="home-content">
+        <div className="home-first-section">
+          <div className="container">
             <div className="intro">
-              <p>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Cumque
-                perspiciatis impedit delectus aspernatur sint distinctio.
-              </p>
-              <div
-                className={`api-test ${this.state.apiSuccess ? 'up' : 'down'}`}
-              >
-                <div className="spinner">
-                  <div className="double-bounce1" />
+              <h1 className="home-title">Business Review</h1>
+              <div className="intro-card">
+                <div className="illustration">
+                  <img src={pinIcon} alt="" className="pin-icon" />
+                  <p>
+                    Write a review for a local store <br /> or find your new
+                    favorite restaurant.
+                  </p>
+                </div>
+                <div className="text">
+                  <h3>Lorem ipsum dolor sit.</h3>
+                  <p>
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                    Totam, aliquid.
+                  </p>
+                  <p>
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                    Nemo, laudantium iure.
+                  </p>
+                  <p>
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                    Nemo, laudantium iure.
+                  </p>
+                  <p>
+                    Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                  </p>
                 </div>
               </div>
             </div>
-            <div className="browse-reviews">
-              <h2>Reviews</h2>
+            <Link to="/businesses" className="browse-button">
+              Browse Places
+            </Link>
+          </div>
+        </div>
+        <div className="home-second-section">
+          <div className="container">
+            <div className="promote">
+              <img src={promoteIcon} alt="" className="promote-icon" />
               <p>
-                Eaque excepturi, cum laborum eveniet doloribus ducimus sed,
-                adipisci id accusantium, earum vel impedit. Lorem ipsum dolor,
-                sit amet consectetur adipisicing elit. Ipsum ex velit officia
-                aspernatur consequuntur? Doloremque, laudantium.
+                Lorem ipsum dolor sit, amet consectetur adipisicing elit. Nulla
+                odio eos officiis quisquam cum porro voluptates blanditiis
+                obcaecati, alias itaque reiciendis corporis officia animi
+                voluptatum vitae? Tempore officia aperiam quae.{' '}
+                <Link to="/promote">Get started</Link>
               </p>
-              <Link to="/reviews" className="browse-button">
-                Browse Reviews
-              </Link>
-            </div>
-            <div className="browse-places">
-              <h2>Places</h2>
-              <p>
-                Eaque excepturi, cum laborum eveniet doloribus ducimus sed,
-                adipisci id accusantium, earum vel impedit. Lorem ipsum dolor,
-                sit amet consectetur adipisicing elit. Ipsum ex velit officia
-                aspernatur consequuntur? Doloremque, laudantium.
-              </p>
-              <Link to="/businesses" className="browse-button">
-                Browse Places
-              </Link>
             </div>
           </div>
         </div>

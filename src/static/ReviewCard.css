@@ -1,0 +1,50 @@
+.review-card {
+  max-height: 132px;
+  box-shadow: 0 3px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1em;
+  font-size: 14px;
+  border-radius: 3px;
+  background: #f7f2ea;
+  color: #35405a;
+}
+
+.review-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+/* Stripe text blueish color, kurzageust background color */
+
+.review-heading {
+  margin: 0 0 0.5em;
+}
+.review-card .review-heading {
+  font-size: 1em;
+}
+.review-heading a {
+  text-decoration: none;
+  color: #35405a;
+}
+.review-text {
+  margin: 0;
+}
+
+.review-date {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.read-more {
+  text-decoration: none;
+  color: rgb(27, 80, 255);
+}
+
+.review-score {
+  margin-right: 1em;
+}
+
+a.business-name {
+  background: #ff503b;
+  padding: 0.1em 0.3em;
+  border-radius: 5px;
+  color: #fff;
+  text-decoration: none;
+}
